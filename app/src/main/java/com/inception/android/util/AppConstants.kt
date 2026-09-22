@@ -24,8 +24,8 @@ object AppConstants {
         const val BROADCAST_CLEANUP_DELAY_MS: Long = 500L
 
         object Gatt {
-            val SERVICE_UUID: UUID = UUID.fromString("F47B5E2D-4A9E-4C5A-9B3F-8E1D2C3A4B5C")
-            val CHARACTERISTIC_UUID: UUID = UUID.fromString("A1B2C3D4-E5F6-4A5B-8C9D-0E1F2A3B4C5D")
+            val SERVICE_UUID: UUID = UUID.fromString("7A9E1D2C-3A4B-5C6D-7E8F-9A0B1C2D3E4F")
+            val CHARACTERISTIC_UUID: UUID = UUID.fromString("8B0F2E3D-4B5C-6D7E-8F9A-0B1C2D3E4F5A")
             val DESCRIPTOR_UUID: UUID = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")
         }
     }

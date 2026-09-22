@@ -93,6 +93,35 @@
                 android:resource="@xml/file_paths" />
         </provider>
 
+        <activity
+            android:name=".MainActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@style/Theme.Inception"
+            android:windowSoftInputMode="adjustResize"
+            android:launchMode="singleTop">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="inception" android:host="verify" />
+            </intent-filter>
+        </activity>
+
+        <service
+            android:name=".mesh.BluetoothMeshService"
+            android:exported="false"
+            android:foregroundServiceType="connectedDevice|dataSync|location" />
+
+        <receiver
+            android:name=".service.ConversationNotificationReceiver"
+            android:enabled="true"
+            android:exported="false" />
+
     </application>
 
 </manifest>

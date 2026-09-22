@@ -13,3 +13,6 @@ local.properties
 # Android Studio / IntelliJ
 *.keystore
 !debug.keystore
+
+# Temporary scratch scripts
+scratch/
