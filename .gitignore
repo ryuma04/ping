@@ -1,0 +1,15 @@
+# Local References & Docs
+references/
+
+# Build & Gradle
+.gradle/
+build/
+**/build/
+*.iml
+.idea/
+local.properties
+.DS_Store
+
+# Android Studio / IntelliJ
+*.keystore
+!debug.keystore
