@@ -11,6 +11,7 @@ import java.io.FileOutputStream
 import java.io.ObjectInputStream
 import java.io.ObjectOutputStream
 import java.util.*
+import com.inception.android.model.InceptionMessage
 
 /**
 * Message retention service for saving channel messages locally

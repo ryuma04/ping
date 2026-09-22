@@ -22,6 +22,7 @@ android {
         vectorDrawables {
             useSupportLibrary = true
         }
+        buildConfigField("String", "GITHUB_RELEASE_CERT_SHA256", "\"\"")
     }
 
     dependenciesInfo {

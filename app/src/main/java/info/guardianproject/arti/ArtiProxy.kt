@@ -53,6 +53,11 @@ class ArtiProxy private constructor(
             return
         }
 
+        if (!ArtiNative.isLoaded) {
+            Log.w(TAG, "Arti native library is not loaded; skipping Tor proxy start")
+            return
+        }
+
         try {
             logListener?.let { listener ->
                 Log.d(TAG, "Registering log callback")

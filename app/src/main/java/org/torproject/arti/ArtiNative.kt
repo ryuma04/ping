@@ -16,8 +16,17 @@ import info.guardianproject.arti.ArtiLogListener
  */
 object ArtiNative {
 
+    var isLoaded: Boolean = false
+        private set
+
     init {
-        System.loadLibrary("arti_android")
+        isLoaded = try {
+            System.loadLibrary("arti_android")
+            true
+        } catch (t: Throwable) {
+            android.util.Log.e("ArtiNative", "Failed to load libarti_android.so", t)
+            false
+        }
     }
 
     /**
