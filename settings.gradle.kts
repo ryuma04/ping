@@ -13,5 +13,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "inception"
+rootProject.name = "ping"
 include(":app")

@@ -80,10 +80,10 @@ fun InceptionBrandButton(
             },
         contentAlignment = Alignment.Center
     ) {
-        Icon(
-            imageVector = InceptionIcon,
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(id = com.inception.android.R.drawable.ic_ping_logo),
             contentDescription = contentDescription,
-            tint = tint,
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
             modifier = Modifier
                 .size(iconSize)
                 .scale(pressScale),

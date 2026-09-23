@@ -185,11 +185,11 @@ internal fun AboutHero(
             .padding(horizontal = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Icon(
-            imageVector = InceptionIcon,
+        androidx.compose.foundation.Image(
+            painter = androidx.compose.ui.res.painterResource(id = R.drawable.ic_ping_logo),
             contentDescription = null,
-            tint = colorScheme.primary,
-            modifier = Modifier.size(64.dp)
+            contentScale = androidx.compose.ui.layout.ContentScale.Fit,
+            modifier = Modifier.size(72.dp)
         )
 
         Spacer(modifier = Modifier.height(16.dp))
