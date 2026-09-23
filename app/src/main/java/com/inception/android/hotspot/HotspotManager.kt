@@ -15,6 +15,7 @@ import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
 import android.util.Log
+import androidx.core.content.ContextCompat
 import java.net.NetworkInterface
 import java.security.SecureRandom
 import kotlin.random.Random
@@ -166,9 +167,18 @@ class HotspotManager(private val context: Context) {
                 addAction(WIFI_P2P_STATE_CHANGED_ACTION)
                 addAction(WIFI_P2P_CONNECTION_CHANGED_ACTION)
             }
-            context.registerReceiver(broadcastReceiver, intentFilter)
-            isReceiverRegistered = true
-            Log.d(TAG, "Broadcast receiver registered")
+            try {
+                ContextCompat.registerReceiver(
+                    context,
+                    broadcastReceiver,
+                    intentFilter,
+                    ContextCompat.RECEIVER_NOT_EXPORTED
+                )
+                isReceiverRegistered = true
+                Log.d(TAG, "Broadcast receiver registered")
+            } catch (e: Exception) {
+                Log.e(TAG, "Failed to register Hotspot broadcastReceiver", e)
+            }
         }
 
         // Acquire locks

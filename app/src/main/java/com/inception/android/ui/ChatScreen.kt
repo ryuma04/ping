@@ -90,6 +90,7 @@ fun ChatScreen(viewModel: ChatViewModel) {
     var passwordInput by remember { mutableStateOf("") }
     var showLocationChannelsSheet by remember { mutableStateOf(false) }
     var showLocationNotesSheet by remember { mutableStateOf(false) }
+    var showLanternSheet by remember { mutableStateOf(false) }
     var showUserSheet by remember { mutableStateOf(false) }
     var selectedUserForSheet by remember { mutableStateOf("") }
     var selectedMessageForSheet by remember { mutableStateOf<InceptionMessage?>(null) }
@@ -462,6 +463,9 @@ fun ChatScreen(viewModel: ChatViewModel) {
             onLocationNotesClick = {
                 nearbyNotesController.reveal()
                 showLocationNotesSheet = true
+            },
+            onLanternClick = {
+                showLanternSheet = true
             }
         )
 
@@ -581,6 +585,19 @@ fun ChatScreen(viewModel: ChatViewModel) {
                 TextButton(onClick = { viewModel.cancelLegacyPrivateMedia(request.requestId) }) {
                     Text(stringResource(android.R.string.cancel))
                 }
+            }
+        )
+    }
+
+    if (showLanternSheet) {
+        val lanternViewModel: com.inception.android.lantern.ui.LanternViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+        com.inception.android.lantern.ui.LanternSheet(
+            viewModel = lanternViewModel,
+            onDismiss = { showLanternSheet = false },
+            onBroadcastMeshQuery = { queryText, category ->
+                val myPeerID = viewModel.myPeerID
+                val msg = lanternViewModel.meshCoordinator.createQueryBroadcastMessage(queryText, category, myPeerID)
+                viewModel.sendMessage(msg)
             }
         )
     }
@@ -761,7 +778,8 @@ private fun ChatFloatingHeader(
     onShowAppInfo: () -> Unit,
     onPanicClear: () -> Unit,
     onLocationChannelsClick: () -> Unit,
-    onLocationNotesClick: () -> Unit
+    onLocationNotesClick: () -> Unit,
+    onLanternClick: () -> Unit = {}
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val locationManager = remember { com.inception.android.geohash.LocationChannelManager.getInstance(context) }
@@ -806,7 +824,8 @@ private fun ChatFloatingHeader(
                 // Ensure location is loaded before showing sheet
                 locationManager.refreshChannels()
                 onLocationNotesClick()
-            }
+            },
+            onLanternClick = onLanternClick
         )
     }
 }

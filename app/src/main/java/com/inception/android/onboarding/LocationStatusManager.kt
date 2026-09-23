@@ -11,6 +11,7 @@ import android.util.Log
 import androidx.activity.ComponentActivity
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 
 /**
  * Manages Location Services enable/disable state and user prompts
@@ -92,7 +93,16 @@ class LocationStatusManager(
             addAction(LocationManager.MODE_CHANGED_ACTION)
             addAction(LocationManager.PROVIDERS_CHANGED_ACTION)
         }
-        context.registerReceiver(locationStateReceiver, filter)
+        try {
+            ContextCompat.registerReceiver(
+                context,
+                locationStateReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register locationStateReceiver", e)
+        }
     }
 
     /**

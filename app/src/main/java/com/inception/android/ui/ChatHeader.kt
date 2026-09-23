@@ -652,7 +652,8 @@ fun ChatHeaderContent(
     onTripleClick: () -> Unit,
     onShowAppInfo: () -> Unit,
     onLocationChannelsClick: () -> Unit,
-    onLocationNotesClick: () -> Unit
+    onLocationNotesClick: () -> Unit,
+    onLanternClick: (() -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
@@ -676,7 +677,8 @@ fun ChatHeaderContent(
                 onSidebarClick = onSidebarClick,
                 onLocationChannelsClick = onLocationChannelsClick,
                 onLocationNotesClick = onLocationNotesClick,
-                viewModel = viewModel
+                viewModel = viewModel,
+                onLanternClick = onLanternClick
             )
         }
     }
@@ -716,7 +718,8 @@ private fun MainHeader(
     onSidebarClick: () -> Unit,
     onLocationChannelsClick: () -> Unit,
     onLocationNotesClick: () -> Unit,
-    viewModel: ChatViewModel
+    viewModel: ChatViewModel,
+    onLanternClick: (() -> Unit)? = null
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val palette = LocalInceptionPalette.current
@@ -805,6 +808,20 @@ private fun MainHeader(
                         onClick = onLocationChannelsClick,
                         showLabel = crowdingMode != HeaderCrowdingMode.IconOnlyLocationChannel
                     )
+
+                    if (onLanternClick != null) {
+                        HeaderIconButton(
+                            onClick = onLanternClick,
+                            contentDescription = "Lantern Emergency Guide"
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Lightbulb,
+                                contentDescription = "Lantern Emergency Guide",
+                                modifier = Modifier.size(HeaderIconSize),
+                                tint = palette.accentOrange
+                            )
+                        }
+                    }
                 }
 
                 PeerCounter(

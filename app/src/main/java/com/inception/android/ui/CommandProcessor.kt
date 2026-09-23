@@ -25,6 +25,7 @@ class CommandProcessor(
         CommandSuggestion("/clear", emptyList(), null, "clear chat messages"),
         CommandSuggestion("/hug", emptyList(), "<nickname>", "send someone a warm hug"),
         CommandSuggestion("/j", listOf("/join"), "<channel>", "join or create a channel"),
+        CommandSuggestion("/lantern", listOf("/guide"), "<query>", "search offline emergency knowledge"),
         CommandSuggestion("/m", listOf("/msg"), "<nickname> [message]", "send private message"),
         CommandSuggestion("/pay", emptyList(), "<token> [public]", "send a Cashu ecash token"),
         CommandSuggestion("/slap", emptyList(), "<nickname>", "slap someone with a trout"),
@@ -42,6 +43,7 @@ class CommandProcessor(
         when (cmd) {
             "/j", "/join" -> handleJoinCommand(parts, myPeerID)
             "/m", "/msg" -> handleMessageCommand(parts, meshService, viewModel)
+            "/lantern", "/guide" -> handleLanternCommand(parts, viewModel)
             "/pay" -> handlePayCommand(command, meshService, myPeerID, onSendMessage, viewModel)
             "/w" -> handleWhoCommand(meshService, viewModel)
             "/clear" -> handleClearCommand()
@@ -364,6 +366,47 @@ class CommandProcessor(
             isRelay = false
         )
         messageManager.addMessage(systemMessage)
+    }
+
+    private fun handleLanternCommand(parts: List<String>, viewModel: ChatViewModel?) {
+        if (parts.size <= 1) {
+            val systemMessage = InceptionMessage(
+                sender = "lantern",
+                content = "Usage: /lantern <emergency query>\nExample: /lantern purify flood water\nOr tap the Lantern icon in the top header.",
+                timestamp = Date(),
+                isRelay = false
+            )
+            messageManager.addMessage(systemMessage)
+            return
+        }
+
+        val app = viewModel?.getApplication<android.app.Application>() ?: return
+        val query = parts.drop(1).joinToString(" ")
+
+        coroutineScope?.launch {
+            val searchEngine = com.inception.android.lantern.domain.LanternSearchEngine.getInstance(app)
+            val result = searchEngine.query(query)
+
+            val content = if (result.synthesizedResponse != null) {
+                result.synthesizedResponse
+            } else if (result.localChunks.isNotEmpty()) {
+                val chunk = result.localChunks.first()
+                val stepsText = if (chunk.steps.isNotEmpty()) {
+                    "\n\nAction Steps:\n" + chunk.steps.mapIndexed { idx, step -> "${idx + 1}. $step" }.joinToString("\n")
+                } else ""
+                "📖 [${chunk.title} - ${chunk.sourceManual}]\n${chunk.summary}$stepsText"
+            } else {
+                "No local manual found for \"$query\". Tap the Lantern icon in the header to ask the mesh."
+            }
+
+            val responseMessage = InceptionMessage(
+                sender = "lantern",
+                content = content,
+                timestamp = Date(),
+                isRelay = false
+            )
+            messageManager.addMessage(responseMessage)
+        }
     }
 
     private fun handlePayCommand(

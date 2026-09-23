@@ -10,6 +10,7 @@ import android.os.BatteryManager
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import androidx.core.content.ContextCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
@@ -275,7 +276,12 @@ class PowerManager private constructor(context: Context) : LifecycleEventObserve
                 addAction(Intent.ACTION_POWER_CONNECTED)
                 addAction(Intent.ACTION_POWER_DISCONNECTED)
             }
-            appContext.registerReceiver(batteryReceiver, filter)
+            ContextCompat.registerReceiver(
+                appContext,
+                batteryReceiver,
+                filter,
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
         } catch (e: Exception) {
             Log.w(TAG, "Failed to register battery receiver: ${e.message}")
         }

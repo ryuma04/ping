@@ -42,21 +42,25 @@ class MeshForegroundService : Service() {
             // Only launch as an FGS when onStartCommand can promote immediately.
             val shouldStartForeground = shouldStartAsForeground(context)
 
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                if (shouldStartForeground) {
-                    context.startForegroundService(intent)
+            try {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                    if (shouldStartForeground) {
+                        context.startForegroundService(intent)
+                    } else {
+                        android.util.Log.i(
+                            "MeshForegroundService",
+                            "Not starting service on API>=26 (shouldStartForeground=$shouldStartForeground)"
+                        )
+                    }
                 } else {
-                    android.util.Log.i(
-                        "MeshForegroundService",
-                        "Not starting service on API>=26 (shouldStartForeground=$shouldStartForeground)"
-                    )
+                    if (MeshServicePreferences.isBackgroundEnabled(true)) {
+                        context.startService(intent)
+                    } else {
+                        android.util.Log.i("MeshForegroundService", "Background disabled; not starting service (pre-O)")
+                    }
                 }
-            } else {
-                if (MeshServicePreferences.isBackgroundEnabled(true)) {
-                    context.startService(intent)
-                } else {
-                    android.util.Log.i("MeshForegroundService", "Background disabled; not starting service (pre-O)")
-                }
+            } catch (t: Throwable) {
+                android.util.Log.e("MeshForegroundService", "Failed to start service: ${t.message}", t)
             }
         }
 
@@ -344,25 +348,33 @@ class MeshForegroundService : Service() {
     }
 
     private fun startForegroundCompat(notification: Notification) {
-        if (Build.VERSION.SDK_INT >= 34) {
-            val type = if (hasLocationPermission()) {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
-            } else {
-                ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
-            }
-            try {
-                startForeground(NOTIFICATION_ID, notification, type)
-            } catch (e: SecurityException) {
-                // Fallback for cases where "While In Use" permission exists but background start is restricted
-                if (type and ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION != 0) {
-                     android.util.Log.w("MeshForegroundService", "Failed to start with LOCATION type, falling back to CONNECTED_DEVICE: ${e.message}")
-                     startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+        try {
+            if (Build.VERSION.SDK_INT >= 34) {
+                val type = if (hasLocationPermission()) {
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE or ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION
                 } else {
-                    throw e
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE
                 }
+                try {
+                    startForeground(NOTIFICATION_ID, notification, type)
+                } catch (e: Throwable) {
+                    // Fallback for cases where "While In Use" permission exists but background start is restricted
+                    if (type and ServiceInfo.FOREGROUND_SERVICE_TYPE_LOCATION != 0) {
+                        android.util.Log.w("MeshForegroundService", "Failed to start with LOCATION type, falling back to CONNECTED_DEVICE: ${e.message}")
+                        try {
+                            startForeground(NOTIFICATION_ID, notification, ServiceInfo.FOREGROUND_SERVICE_TYPE_CONNECTED_DEVICE)
+                        } catch (t: Throwable) {
+                            android.util.Log.w("MeshForegroundService", "Fallback to CONNECTED_DEVICE failed: ${t.message}")
+                        }
+                    } else {
+                        android.util.Log.w("MeshForegroundService", "Failed to start with type $type: ${e.message}")
+                    }
+                }
+            } else {
+                startForeground(NOTIFICATION_ID, notification)
             }
-        } else {
-            startForeground(NOTIFICATION_ID, notification)
+        } catch (t: Throwable) {
+            android.util.Log.e("MeshForegroundService", "startForeground failed: ${t.message}", t)
         }
     }
 

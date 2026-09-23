@@ -8,6 +8,7 @@ import android.location.Location
 import android.location.LocationManager
 import android.util.Log
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.google.android.gms.common.ConnectionResult
 import com.google.android.gms.common.GoogleApiAvailability
 import com.inception.android.nostr.NostrIdentityBridge
@@ -139,7 +140,16 @@ class LocationChannelManager private constructor(private val context: Context) {
         loadPersistedChannelSelection()
 
         // Register for system location changes
-        context.registerReceiver(locationStateReceiver, IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION))
+        try {
+            ContextCompat.registerReceiver(
+                context,
+                locationStateReceiver,
+                IntentFilter(LocationManager.PROVIDERS_CHANGED_ACTION),
+                ContextCompat.RECEIVER_NOT_EXPORTED
+            )
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to register locationStateReceiver", e)
+        }
     }
 
     // MARK: - Public API (matching iOS interface)
