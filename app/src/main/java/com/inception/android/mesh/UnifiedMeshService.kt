@@ -239,6 +239,16 @@ class UnifiedMeshService(
         }
     }
 
+    override fun sendSosBeacon(payload: com.inception.android.model.SosPayload) {
+        try { bluetooth.sendSosBeacon(payload) } catch (e: Exception) { Log.e(TAG, "BLE sendSosBeacon failed: ${e.message}") }
+        try { wifiService()?.sendSosBeacon(payload) } catch (_: Exception) {}
+    }
+
+    override fun sendSosCancel(payload: com.inception.android.model.SosPayload) {
+        try { bluetooth.sendSosCancel(payload) } catch (e: Exception) { Log.e(TAG, "BLE sendSosCancel failed: ${e.message}") }
+        try { wifiService()?.sendSosCancel(payload) } catch (_: Exception) {}
+    }
+
     override fun getPeerNicknames(): Map<String, String> {
         val merged = linkedMapOf<String, String>()
         try { merged.putAll(wifiService()?.getPeerNicknames().orEmpty()) } catch (_: Exception) { }

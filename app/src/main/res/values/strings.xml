@@ -142,6 +142,11 @@
   <string name="file_viewer_size">📏 Size: %1$s</string>
   <string name="file_viewer_type">🏷️ Type: %1$s</string>
   <string name="file_viewer_open_save">📂 Open / Save</string>
+  <string name="file_viewer_open">Open</string>
+  <string name="file_viewer_save">Save</string>
+  <string name="toast_file_saved">File saved to Downloads</string>
+  <string name="toast_file_save_failed">Failed to save file</string>
+  <string name="toast_no_app_for_file">No application available to open this file</string>
   <string name="close_with_emoji">❌ Close</string>
   <string name="pick_image">Pick image</string>
   <string name="cd_save_current_image">Save current image</string>

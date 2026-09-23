@@ -232,6 +232,7 @@ class ChatViewModel(
 
 
     val messages: StateFlow<List<InceptionMessage>> = state.messages
+    val snackbarMessage: kotlinx.coroutines.flow.SharedFlow<String> = state.snackbarMessage
     val connectedPeers: StateFlow<List<String>> = state.connectedPeers
     val nickname: StateFlow<String> = state.nickname
     val isConnected: StateFlow<Boolean> = state.isConnected
@@ -430,6 +431,11 @@ class ChatViewModel(
         ContactDirectory.initialize(getApplication()) { mesh }
         com.inception.android.services.AppStateStore.canonicalizePrivateChats()
         observeConversationDisplayNames()
+        try {
+            com.inception.android.mesh.SosManager.getInstance(getApplication()).onLocalMessageCallback = { msg ->
+                messageManager.addMessage(msg)
+            }
+        } catch (_: Exception) { }
         // Application startup performs the initial restore. Repeat it for every new UI owner
         // because a quick reopen can reuse a process whose in-memory state was cleared during
         // controlled shutdown.
@@ -1457,6 +1463,12 @@ class ChatViewModel(
             com.inception.android.geohash.LocationChannelManager
                 .getInstance(getApplication())
                 .disableLocationServices()
+        } catch (_: Exception) { }
+
+        try {
+            com.inception.android.mesh.SosManager
+                .getInstance(getApplication())
+                .cancelEmergencySos("Panic clear")
         } catch (_: Exception) { }
 
         // A pending one-shot downgrade confirmation must not survive panic or

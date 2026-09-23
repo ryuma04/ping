@@ -113,7 +113,8 @@ class PacketProcessor(private val myPeerID: String) {
      */
     private suspend fun handleReceivedPacket(routed: RoutedPacket) {
         val packet = routed.packet
-        val peerID = routed.peerID ?: "unknown"
+        val peerID = routed.peerID?.takeIf { it.isNotBlank() && it != "unknown" }
+            ?: packet.senderID.toHexString()
 
         // Basic validation and security checks
         if (!delegate?.validatePacketSecurity(packet, peerID)!!) {
@@ -140,6 +141,7 @@ class PacketProcessor(private val myPeerID: String) {
             MessageType.LEAVE -> handleLeave(routed)
             MessageType.FRAGMENT -> handleFragment(routed)
             MessageType.REQUEST_SYNC -> handleRequestSync(routed)
+            MessageType.SOS_BEACON, MessageType.SOS_CANCEL -> handleMessage(routed)
             else -> {
                 // Handle private packet types (address check required)
                 if (packetRelayManager.isPacketAddressedToMe(packet)) {
@@ -209,10 +211,11 @@ class PacketProcessor(private val myPeerID: String) {
     private suspend fun handleFragment(routed: RoutedPacket) {
         val reassembledPacket = delegate?.handleFragment(routed.packet)
         if (reassembledPacket != null) {
+            val originatorPeerID = reassembledPacket.senderID.toHexString()
             handleReceivedPacket(
                 RoutedPacket(
                     packet = reassembledPacket,
-                    peerID = routed.peerID,
+                    peerID = routed.peerID?.takeIf { it.isNotBlank() && it != "unknown" } ?: originatorPeerID,
                     relayAddress = routed.relayAddress,
                     ingressLinkID = routed.ingressLinkID
                 )

@@ -19,7 +19,18 @@ class PacketRelayManager(private val myPeerID: String) {
     
     companion object {
         private const val TAG = "PacketRelayManager"
+        private const val SOS_ANTI_REPLAY_MAX_AGE_MS = 5 * 60 * 1000L // 5 minutes
+        private const val SOS_ANTI_REPLAY_FUTURE_TOLERANCE_MS = 60 * 1000L // 1 minute
     }
+
+    // LRU seen-digest filter for emergency SOS packets to prevent broadcast storms / duplicate echoes
+    private val sosSeenFilter = java.util.Collections.synchronizedMap(
+        object : java.util.LinkedHashMap<String, Long>(256, 0.75f, true) {
+            override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, Long>?): Boolean {
+                return size > 256
+            }
+        }
+    )
     
     private fun isRelayEnabled(): Boolean = try {
         com.inception.android.ui.debug.DebugSettingsManager.getInstance().packetRelayEnabled.value
@@ -58,6 +69,41 @@ class PacketRelayManager(private val myPeerID: String) {
         // Check TTL and decrement
         if (packet.ttl == 0u.toUByte()) {
             Log.d(TAG, "TTL expired, not relaying packet")
+            return
+        }
+
+        // HIGH PRIORITY EMERGENCY SOS RELAY BYPASS (FR-SOS-02, FR-SOS-06)
+        val isSos = packet.type == MessageType.SOS_BEACON.value ||
+            packet.type == MessageType.SOS_CANCEL.value ||
+            com.inception.android.model.SosPayload.isSosPayload(packet.payload)
+
+        if (isSos) {
+            val now = System.currentTimeMillis()
+            val packetTime = packet.timestamp.toLong()
+            val age = now - packetTime
+            // 1. Anti-replay window check
+            if (age > SOS_ANTI_REPLAY_MAX_AGE_MS || age < -SOS_ANTI_REPLAY_FUTURE_TOLERANCE_MS) {
+                Log.w(TAG, "Dropping SOS relay packet outside anti-replay window (age: ${age}ms)")
+                return
+            }
+            // 2. Seen-digest filter for duplicate echoes
+            val seenKey = "${packet.senderID.toHexString()}_${packet.timestamp}"
+            synchronized(sosSeenFilter) {
+                if (sosSeenFilter.containsKey(seenKey)) {
+                    Log.d(TAG, "Dropping duplicate SOS echo from ${packet.senderID.toHexString()}")
+                    return
+                }
+                sosSeenFilter[seenKey] = now
+            }
+            // 3. Random slotted jitter (10ms - 50ms) before rebroadcast
+            delay(Random.nextLong(10L, 51L))
+            // 4. Decrement TTL and immediately rebroadcast, bypassing outbox queue/rate-limiting
+            val decrementedTtl = (packet.ttl - 1u).toUByte()
+            if (decrementedTtl > 0u) {
+                val relayPacket = packet.copy(ttl = decrementedTtl)
+                Log.i(TAG, "🚨 Relaying Emergency SOS packet with TTL $decrementedTtl (bypassed queue)")
+                delegate?.broadcastPacket(RoutedPacket(relayPacket, peerID, routed.relayAddress))
+            }
             return
         }
         

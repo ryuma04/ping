@@ -43,6 +43,8 @@ class MediaSendingManager(
         get() = getMeshService()
     companion object {
         private const val TAG = "MediaSendingManager"
+        private const val BLE_MAX_FILE_SIZE = 500L * 1024L // 500 KB limit for BLE mesh
+        private const val WIFI_AWARE_MAX_FILE_SIZE = 25L * 1024L * 1024L // 25 MB limit for Wi-Fi Aware
         private const val MAX_FILE_SIZE = com.inception.android.util.AppConstants.Media.MAX_FILE_SIZE_BYTES
         private const val PENDING_PRIVATE_MEDIA_TIMEOUT_MS = 15_000L
     }
@@ -84,9 +86,10 @@ class MediaSendingManager(
     private var pendingAutomaticTimeoutRequestId: String? = null
 
     /**
-     * Enforce the send-size cap with a user-visible failure posted to the
-     * conversation the user is sending from. Returns true if the file is
-     * oversized and the send was aborted.
+     * Enforce the send-size cap with transport-aware gating:
+     * - If only BLE is active, files > 500 KB are rejected with a snackbar advising Wi-Fi Aware.
+     * - If Wi-Fi Aware is connected, files up to 25 MB are permitted.
+     * Returns true if the file is oversized and the send was aborted.
      */
     private fun rejectIfOversized(
         file: java.io.File,
@@ -94,11 +97,20 @@ class MediaSendingManager(
         channelOrNull: String?
     ): Boolean {
         val size = file.length()
-        if (size <= MAX_FILE_SIZE) return false
-        Log.e(TAG, "❌ File too large: $size bytes (max: $MAX_FILE_SIZE)")
-        val sizeMb = size / (1024 * 1024)
-        val maxMb = MAX_FILE_SIZE / (1024 * 1024)
-        val text = "cannot send ${file.name}: file is too large (${sizeMb} MB, max $maxMb MB)"
+        val isWifiAware = com.inception.android.service.TransportBridgeService.isWifiAwareActive()
+        val maxAllowed = if (isWifiAware) WIFI_AWARE_MAX_FILE_SIZE else BLE_MAX_FILE_SIZE
+
+        if (size <= maxAllowed) return false
+        Log.e(TAG, "❌ File rejected: $size bytes (limit: $maxAllowed, wifiAware=$isWifiAware)")
+
+        val text = if (!isWifiAware && size > BLE_MAX_FILE_SIZE) {
+            "File exceeds 500 KB limit for BLE mesh. Connect via Wi-Fi Aware to send larger files."
+        } else {
+            val sizeMb = size / (1024 * 1024)
+            val maxMb = maxAllowed / (1024 * 1024)
+            "cannot send ${file.name}: file is too large (${sizeMb} MB, max $maxMb MB)"
+        }
+
         when {
             toPeerIDOrNull != null -> {
                 val sys = InceptionMessage(
@@ -120,6 +132,7 @@ class MediaSendingManager(
             }
             else -> messageManager.addSystemMessage(text)
         }
+        state.postSnackbarMessage(text)
         return true
     }
 
@@ -153,7 +166,8 @@ class MediaSendingManager(
                     fileName = file.name,
                     fileSize = file.length(),
                     mimeType = "audio/mp4",
-                    content = file.readBytes()
+                    content = file.readBytes(),
+                    channel = channelOrNull
                 )
             } ?: return
 
@@ -197,7 +211,8 @@ class MediaSendingManager(
                     fileName = file.name,
                     fileSize = file.length(),
                     mimeType = "image/jpeg",
-                    content = file.readBytes()
+                    content = file.readBytes(),
+                    channel = channelOrNull
                 )
             } ?: return
 
@@ -263,7 +278,8 @@ class MediaSendingManager(
                     fileName = originalName,
                     fileSize = file.length(),
                     mimeType = mimeType,
-                    content = file.readBytes()
+                    content = file.readBytes(),
+                    channel = channelOrNull
                 )
             } ?: return
 

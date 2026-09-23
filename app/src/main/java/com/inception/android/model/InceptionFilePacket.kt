@@ -20,16 +20,18 @@ data class InceptionFilePacket(
     val fileName: String,
     val fileSize: Long,
     val mimeType: String,
-    val content: ByteArray
+    val content: ByteArray,
+    val channel: String? = null
 ) {
     private enum class TLVType(val v: UByte) {
-        FILE_NAME(0x01u), FILE_SIZE(0x02u), MIME_TYPE(0x03u), CONTENT(0x04u);
+        FILE_NAME(0x01u), FILE_SIZE(0x02u), MIME_TYPE(0x03u), CONTENT(0x04u), CHANNEL(0x05u);
         companion object {
             fun from(value: UByte): TLVType? = when (value) {
                 FILE_NAME.v -> FILE_NAME
                 FILE_SIZE.v -> FILE_SIZE
                 MIME_TYPE.v -> MIME_TYPE
                 CONTENT.v -> CONTENT
+                CHANNEL.v -> CHANNEL
                 else -> null
             }
         }
@@ -37,11 +39,12 @@ data class InceptionFilePacket(
 
     fun encode(): ByteArray? {
         try {
-            android.util.Log.d("InceptionFilePacket", "Encoding: name=$fileName, size=$fileSize, mime=$mimeType")
+            android.util.Log.d("InceptionFilePacket", "Encoding: name=$fileName, size=$fileSize, mime=$mimeType, channel=$channel")
             val nameBytes = fileName.toByteArray(Charsets.UTF_8)
             val mimeBytes = mimeType.toByteArray(Charsets.UTF_8)
+            val channelBytes = channel?.toByteArray(Charsets.UTF_8)
             
-            if (nameBytes.size > 0xFFFF || mimeBytes.size > 0xFFFF) {
+            if (nameBytes.size > 0xFFFF || mimeBytes.size > 0xFFFF || (channelBytes != null && channelBytes.size > 0xFFFF)) {
                 android.util.Log.e("InceptionFilePacket", "TLV field too large: name=${nameBytes.size}, mime=${mimeBytes.size} (max: 65535)")
                 return null
             }
@@ -53,7 +56,8 @@ data class InceptionFilePacket(
 
             // Compute capacity: header TLVs + single CONTENT TLV with 4-byte length
             val contentTLVBytes = 1 + contentLenFieldLen + content.size
-            val capacity = (1 + 2 + nameBytes.size) + (1 + 2 + sizeFieldLen) + (1 + 2 + mimeBytes.size) + contentTLVBytes
+            val channelTLVBytes = if (channelBytes != null) (1 + 2 + channelBytes.size) else 0
+            val capacity = (1 + 2 + nameBytes.size) + (1 + 2 + sizeFieldLen) + (1 + 2 + mimeBytes.size) + channelTLVBytes + contentTLVBytes
             val buf = ByteBuffer.allocate(capacity).order(ByteOrder.BIG_ENDIAN)
 
             // FILE_NAME
@@ -70,6 +74,13 @@ data class InceptionFilePacket(
             buf.put(TLVType.MIME_TYPE.v.toByte())
             buf.putShort(mimeBytes.size.toShort())
             buf.put(mimeBytes)
+
+            // CHANNEL (optional)
+            if (channelBytes != null) {
+                buf.put(TLVType.CHANNEL.v.toByte())
+                buf.putShort(channelBytes.size.toShort())
+                buf.put(channelBytes)
+            }
 
             // CONTENT (single TLV with 4-byte length)
             buf.put(TLVType.CONTENT.v.toByte())
@@ -93,6 +104,7 @@ data class InceptionFilePacket(
                 var name: String? = null
                 var size: Long? = null
                 var mime: String? = null
+                var channel: String? = null
                 var contentBytes: ByteArray? = null
                 var skippedUnknownTLVs = 0
                 while (off < data.size) {
@@ -129,6 +141,7 @@ data class InceptionFilePacket(
                             size = bb.int.toLong()
                         }
                         TLVType.MIME_TYPE -> mime = String(value, Charsets.UTF_8)
+                        TLVType.CHANNEL -> channel = String(value, Charsets.UTF_8)
                         TLVType.CONTENT -> {
                             if (contentBytes == null) contentBytes = value else {
                                 contentBytes = (contentBytes!! + value)
@@ -143,8 +156,8 @@ data class InceptionFilePacket(
                 val c = contentBytes ?: return null
                 val s = size ?: c.size.toLong()
                 val m = mime ?: "application/octet-stream"
-                val result = InceptionFilePacket(n, s, m, c)
-                android.util.Log.d("InceptionFilePacket", "Decoded: name=$n, size=$s, mime=$m, content=${c.size} bytes")
+                val result = InceptionFilePacket(n, s, m, c, channel)
+                android.util.Log.d("InceptionFilePacket", "Decoded: name=$n, size=$s, mime=$m, channel=$channel, content=${c.size} bytes")
                 return result
             } catch (e: Exception) {
                 android.util.Log.e("InceptionFilePacket", "Decoding failed: ${e.message}", e)
@@ -162,6 +175,7 @@ data class InceptionFilePacket(
         if (fileName != other.fileName) return false
         if (fileSize != other.fileSize) return false
         if (mimeType != other.mimeType) return false
+        if (channel != other.channel) return false
         if (!content.contentEquals(other.content)) return false
 
         return true
@@ -171,6 +185,7 @@ data class InceptionFilePacket(
         var result = fileName.hashCode()
         result = 31 * result + fileSize.hashCode()
         result = 31 * result + mimeType.hashCode()
+        result = 31 * result + (channel?.hashCode() ?: 0)
         result = 31 * result + content.contentHashCode()
         return result
     }
