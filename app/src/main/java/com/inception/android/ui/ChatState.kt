@@ -4,10 +4,13 @@ import android.util.Log
 import com.inception.android.model.InceptionMessage
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -134,6 +137,14 @@ class ChatState(
 
     private val _showSecurityVerificationSheet = MutableStateFlow(false)
     val showSecurityVerificationSheet: StateFlow<Boolean> = _showSecurityVerificationSheet.asStateFlow()
+
+    // Transient UI notifications (e.g. transport size limits, errors)
+    private val _snackbarMessage = MutableSharedFlow<String>(extraBufferCapacity = 1)
+    val snackbarMessage: SharedFlow<String> = _snackbarMessage.asSharedFlow()
+
+    fun postSnackbarMessage(message: String) {
+        _snackbarMessage.tryEmit(message)
+    }
     
     // Location channels state (for Nostr geohash features)
     private val _selectedLocationChannel = MutableStateFlow<com.inception.android.geohash.ChannelID?>(com.inception.android.geohash.ChannelID.Mesh)

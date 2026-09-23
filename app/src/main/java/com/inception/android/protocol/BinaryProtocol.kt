@@ -19,7 +19,9 @@ enum class MessageType(val value: UByte) {
     FRAGMENT(0x20u), // Fragmentation for large packets
     REQUEST_SYNC(0x21u), // GCS-based sync request
     FILE_TRANSFER(0x22u), // File transfer packet (BLE voice notes, images, etc.)
-    VOICE_FRAME(0x29u); // Ephemeral live push-to-talk frame; never added to gossip sync
+    VOICE_FRAME(0x29u), // Ephemeral live push-to-talk frame; never added to gossip sync
+    SOS_BEACON(0x30u),  // Emergency SOS distress beacon
+    SOS_CANCEL(0x31u);  // Authenticated cancellation of emergency SOS
 
     companion object {
         fun fromValue(value: UByte): MessageType? {

@@ -589,21 +589,21 @@ fun MessageItem(
                 color = colorScheme.onSurface,
             )
 
-            // Try to load the file packet from the path
-            val packet = try {
-                val file = java.io.File(path)
-                if (file.exists()) {
-                    // Create a temporary InceptionFilePacket for display
-                    // In a real implementation, this would be stored with the packet metadata
-                    com.inception.android.model.InceptionFilePacket(
-                        fileName = file.name,
-                        fileSize = file.length(),
-                        mimeType = com.inception.android.features.file.FileUtils.getMimeTypeFromExtension(file.name),
-                        content = file.readBytes()
-                    )
-                } else null
-            } catch (e: Exception) {
-                null
+            // Load the file packet metadata from the path, remembered to avoid disk I/O on every recomposition
+            val packet = remember(path) {
+                try {
+                    val file = java.io.File(path)
+                    if (file.exists()) {
+                        com.inception.android.model.InceptionFilePacket(
+                            fileName = file.name,
+                            fileSize = file.length(),
+                            mimeType = com.inception.android.features.file.FileUtils.getMimeTypeFromExtension(file.name),
+                            content = ByteArray(0)
+                        )
+                    } else null
+                } catch (e: Exception) {
+                    null
+                }
             }
 
             Row(
@@ -627,6 +627,7 @@ fun MessageItem(
                             // Static file display with open/save dialog
                             FileMessageItem(
                                 packet = packet,
+                                filePath = path,
                                 onFileClick = {
                                     // handled inside FileMessageItem via dialog
                                 }

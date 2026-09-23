@@ -130,17 +130,29 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
                         Log.d(TAG, "Encrypted file from $peerID: ${file.fileSize} bytes")
                         val uniqueMsgId = java.util.UUID.randomUUID().toString().uppercase()
                         val savedPath = com.inception.android.features.file.FileUtils.saveIncomingFile(appContext, file)
+                        val msgType = com.inception.android.features.file.FileUtils.messageTypeForMime(file.mimeType)
                         val message = InceptionMessage(
                             id = uniqueMsgId,
                             sender = delegate?.getPeerNickname(peerID) ?: "Unknown",
                             content = savedPath,
-                            type = com.inception.android.features.file.FileUtils.messageTypeForMime(file.mimeType),
+                            type = msgType,
                             timestamp = java.util.Date(packet.timestamp.toLong()),
                             isRelay = false,
                             isPrivate = true,
                             recipientNickname = delegate?.getMyNickname(),
                             senderPeerID = peerID
                         )
+
+                        if (msgType == InceptionMessageType.File) {
+                            val formattedSize = com.inception.android.features.file.FileUtils.formatFileSize(file.fileSize)
+                            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                                android.widget.Toast.makeText(
+                                    appContext,
+                                    "📄 Received document: ${file.fileName} ($formattedSize)",
+                                    android.widget.Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        }
 
                         if (!LiveVoiceManager.getInstance(appContext).absorbFinalizedVoiceNote(message)) {
                             delegate?.onMessageReceived(message)
@@ -452,13 +464,58 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
      */
     private suspend fun handleBroadcastMessage(routed: RoutedPacket) {
         val packet = routed.packet
-        val peerID = routed.peerID ?: "unknown"
+        val peerID = routed.peerID?.takeIf { it.isNotBlank() && it != "unknown" }
+            ?: packet.senderID.toHexString()
+
+        // Emergency SOS Beacon & Cancellation Bypass (FR-SOS-02, FR-SOS-04)
+        val isSosBeacon = packet.type == MessageType.SOS_BEACON.value
+        val isSosCancel = packet.type == MessageType.SOS_CANCEL.value
+        val isSosWirePayload = com.inception.android.model.SosPayload.isSosPayload(packet.payload)
+
+        if (isSosBeacon || isSosCancel || isSosWirePayload) {
+            val sosPayload = com.inception.android.model.SosPayload.decode(packet.payload)
+            if (sosPayload != null) {
+                val senderNickname = delegate?.getPeerNickname(peerID) ?: "Peer-${peerID.take(6)}"
+                val sosManager = SosManager.getInstance(appContext)
+                if (isSosCancel || sosPayload.status == com.inception.android.model.EmergencyStatus.CANCELLED) {
+                    sosManager.onReceivedSosCancel(peerID, sosPayload)
+                    val cancelMsg = InceptionMessage(
+                        id = PacketIdUtil.computeIdHex(packet).uppercase(),
+                        sender = senderNickname,
+                        content = "🕊️ [SOS CANCELLED] $senderNickname is marked safe. Note: ${sosPayload.note}",
+                        type = InceptionMessageType.Message,
+                        senderPeerID = peerID,
+                        timestamp = Date(packet.timestamp.toLong())
+                    )
+                    delegate?.onMessageReceived(cancelMsg)
+                } else {
+                    sosManager.onReceivedSosBeacon(peerID, senderNickname, sosPayload)
+                    val alertMsg = InceptionMessage(
+                        id = PacketIdUtil.computeIdHex(packet).uppercase(),
+                        sender = senderNickname,
+                        content = "🚨 [EMERGENCY SOS: ${sosPayload.status.displayName.uppercase()}]\n" +
+                            "🔋 Battery: ${sosPayload.batteryPct}%\n" +
+                            (if (!sosPayload.geohash.isNullOrBlank()) "📍 Geohash: ${sosPayload.geohash}\n" else "") +
+                            "📝 Note: ${sosPayload.note}",
+                        type = InceptionMessageType.Message,
+                        senderPeerID = peerID,
+                        timestamp = Date(packet.timestamp.toLong())
+                    )
+                    delegate?.onMessageReceived(alertMsg)
+                }
+                return
+            }
+        }
         
-        // Enforce: only accept public messages from verified peers we know
+        // Enforce: only accept public messages from verified peers we know (or verified-signed files)
+        val isFileTransfer = com.inception.android.protocol.MessageType.fromValue(packet.type) == com.inception.android.protocol.MessageType.FILE_TRANSFER
         val peerInfo = delegate?.getPeerInfo(peerID)
         if (peerInfo == null || !peerInfo.isVerifiedNickname) {
-            Log.w(TAG, "Dropping public message from unverified peer ${peerID.take(8)}")
-            return
+            val signatureIsValid = packet.signature != null && delegate?.verifySignature(packet, peerID) == true
+            if (!signatureIsValid && !isFileTransfer) {
+                Log.w(TAG, "Dropping public message from unverified peer ${peerID.take(8)}")
+                return
+            }
         }
         
         try {
@@ -468,14 +525,26 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
             if (file != null) {
 
                 val savedPath = com.inception.android.features.file.FileUtils.saveIncomingFile(appContext, file)
+                val msgType = com.inception.android.features.file.FileUtils.messageTypeForMime(file.mimeType)
                 val message = InceptionMessage(
                     id = PacketIdUtil.computeIdHex(packet).uppercase(),
                     sender = delegate?.getPeerNickname(peerID) ?: "unknown",
                     content = savedPath,
-                    type = com.inception.android.features.file.FileUtils.messageTypeForMime(file.mimeType),
+                    type = msgType,
                     senderPeerID = peerID,
-                    timestamp = Date(packet.timestamp.toLong())
+                    timestamp = Date(packet.timestamp.toLong()),
+                    channel = file.channel
                 )
+                if (msgType == InceptionMessageType.File) {
+                    val formattedSize = com.inception.android.features.file.FileUtils.formatFileSize(file.fileSize)
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                        android.widget.Toast.makeText(
+                            appContext,
+                            "📄 Received document: ${file.fileName} ($formattedSize)",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
                 if (!LiveVoiceManager.getInstance(appContext).absorbFinalizedVoiceNote(message)) {
                     delegate?.onMessageReceived(message)
                 }
@@ -527,16 +596,27 @@ class MessageHandler(private val myPeerID: String, private val appContext: andro
             if (file != null) {
 
                 val savedPath = com.inception.android.features.file.FileUtils.saveIncomingFile(appContext, file)
+                val msgType = com.inception.android.features.file.FileUtils.messageTypeForMime(file.mimeType)
                 val message = InceptionMessage(
                     id = java.util.UUID.randomUUID().toString().uppercase(),
                     sender = delegate?.getPeerNickname(peerID) ?: "unknown",
                     content = savedPath,
-                    type = com.inception.android.features.file.FileUtils.messageTypeForMime(file.mimeType),
+                    type = msgType,
                     senderPeerID = peerID,
                     timestamp = Date(packet.timestamp.toLong()),
                     isPrivate = true,
                     recipientNickname = delegate?.getMyNickname()
                 )
+                if (msgType == InceptionMessageType.File) {
+                    val formattedSize = com.inception.android.features.file.FileUtils.formatFileSize(file.fileSize)
+                    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.Main).launch {
+                        android.widget.Toast.makeText(
+                            appContext,
+                            "📄 Received document: ${file.fileName} ($formattedSize)",
+                            android.widget.Toast.LENGTH_LONG
+                        ).show()
+                    }
+                }
                 Log.d(TAG, "📄 Saved incoming file to $savedPath")
                 if (!LiveVoiceManager.getInstance(appContext).absorbFinalizedVoiceNote(message)) {
                     delegate?.onMessageReceived(message)

@@ -250,11 +250,8 @@ fun ChatScreen(viewModel: ChatViewModel) {
         buildMentionPeerIdentityMap(displayMessages, knownPeers)
     }
 
-    // Determine whether to show media buttons (only hide in geohash location chats)
-    val showMediaButtons = when {
-        currentChannel != null -> true
-        else -> selectedLocationChannel !is com.inception.android.geohash.ChannelID.Location
-    }
+    // Determine whether to show media buttons (enable in all public and location channels)
+    val showMediaButtons = true
 
     // Use WindowInsets to handle keyboard properly
     Box(
@@ -410,13 +407,25 @@ fun ChatScreen(viewModel: ChatViewModel) {
             }
         },
         onSendVoiceNote = { peer, onionOrChannel, path ->
-            viewModel.sendVoiceNote(peer, onionOrChannel, path)
+            val effectiveChannel = onionOrChannel ?: run {
+                val loc = selectedLocationChannel
+                if (loc is com.inception.android.geohash.ChannelID.Location) "geo:${loc.channel.geohash}" else null
+            }
+            viewModel.sendVoiceNote(peer, effectiveChannel, path)
         },
         onSendImageNote = { peer, onionOrChannel, path ->
-            viewModel.sendImageNote(peer, onionOrChannel, path)
+            val effectiveChannel = onionOrChannel ?: run {
+                val loc = selectedLocationChannel
+                if (loc is com.inception.android.geohash.ChannelID.Location) "geo:${loc.channel.geohash}" else null
+            }
+            viewModel.sendImageNote(peer, effectiveChannel, path)
         },
         onSendFileNote = { peer, onionOrChannel, path ->
-            viewModel.sendFileNote(peer, onionOrChannel, path)
+            val effectiveChannel = onionOrChannel ?: run {
+                val loc = selectedLocationChannel
+                if (loc is com.inception.android.geohash.ChannelID.Location) "geo:${loc.channel.geohash}" else null
+            }
+            viewModel.sendFileNote(peer, effectiveChannel, path)
         },
         recorderFactory = viewModel::createVoiceRecorder,
         
@@ -502,6 +511,21 @@ fun ChatScreen(viewModel: ChatViewModel) {
                 }
             }
         }
+
+        // Floating snackbar host for size warnings and transient notifications
+        val snackbarHostState = remember { SnackbarHostState() }
+        LaunchedEffect(viewModel) {
+            viewModel.snackbarMessage.collect { msg ->
+                snackbarHostState.showSnackbar(msg)
+            }
+        }
+        SnackbarHost(
+            hostState = snackbarHostState,
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .padding(bottom = composerHeight + 8.dp)
+                .zIndex(2.0f)
+        )
     }
 
     // Full-screen image viewer - separate from other sheets to allow image browsing without navigation
@@ -765,48 +789,55 @@ private fun ChatFloatingHeader(
 ) {
     val context = androidx.compose.ui.platform.LocalContext.current
     val locationManager = remember { com.inception.android.geohash.LocationChannelManager.getInstance(context) }
+    val sosManager = remember { com.inception.android.mesh.SosManager.getInstance(context) }
+    val primaryAlert by sosManager.primaryAlert.collectAsStateWithLifecycle()
 
-    Box(
+    Column(
         modifier = Modifier
             .fillMaxWidth()
+            .wrapContentHeight()
             .zIndex(1f)
-            // Fully opaque where it meets the system status bar, fading to translucent at its
-            // lower edge. The status bar itself is transparent, so anything less than opaque at
-            // the top would let the wallpaper or a light system-bar scrim bleed through and the
-            // header would stop reading as part of the app.
-            .background(
-                Brush.verticalGradient(
-                    0f to colorScheme.background,
-                    HeaderOpaqueStop to colorScheme.background,
-                    1f to colorScheme.background.copy(alpha = BarBackgroundAlpha)
-                )
-            )
             .windowInsetsPadding(WindowInsets.statusBars) // Extend into status bar area
     ) {
-        // No TopAppBar: it silently injects a 4.dp horizontal pad plus a 12.dp title inset and
-        // applies its own minimum heights, which made the header's spacing impossible to specify
-        // exactly. Height and edge insets belong to each header variant, so that a conversation
-        // header rendered here and one rendered in a sheet are laid out identically.
-        ChatHeaderContent(
-            selectedPrivatePeer = selectedPrivatePeer,
-            currentChannel = currentChannel,
-            nickname = nickname,
-            viewModel = viewModel,
-            onBackClick = {
-                when {
-                    selectedPrivatePeer != null -> viewModel.endPrivateChat()
-                    currentChannel != null -> viewModel.switchToChannel(null)
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(
+                    Brush.verticalGradient(
+                        0f to colorScheme.background,
+                        HeaderOpaqueStop to colorScheme.background,
+                        1f to colorScheme.background.copy(alpha = BarBackgroundAlpha)
+                    )
+                )
+        ) {
+            ChatHeaderContent(
+                selectedPrivatePeer = selectedPrivatePeer,
+                currentChannel = currentChannel,
+                nickname = nickname,
+                viewModel = viewModel,
+                onBackClick = {
+                    when {
+                        selectedPrivatePeer != null -> viewModel.endPrivateChat()
+                        currentChannel != null -> viewModel.switchToChannel(null)
+                    }
+                },
+                onSidebarClick = onSidebarToggle,
+                onTripleClick = onPanicClear,
+                onShowAppInfo = onShowAppInfo,
+                onLocationChannelsClick = onLocationChannelsClick,
+                onLocationNotesClick = {
+                    // Ensure location is loaded before showing sheet
+                    locationManager.refreshChannels()
+                    onLocationNotesClick()
                 }
-            },
-            onSidebarClick = onSidebarToggle,
-            onTripleClick = onPanicClear,
-            onShowAppInfo = onShowAppInfo,
-            onLocationChannelsClick = onLocationChannelsClick,
-            onLocationNotesClick = {
-                // Ensure location is loaded before showing sheet
-                locationManager.refreshChannels()
-                onLocationNotesClick()
-            }
+            )
+        }
+
+        // Persistent Emergency SOS Distress Banner (FR-SOS-04, FR-SOS-05)
+        EmergencySosBanner(
+            primaryAlert = primaryAlert,
+            onCancelMySos = { sosManager.cancelEmergencySos("User marked safe") },
+            onDismissRemoteAlert = { peerID -> sosManager.dismissAlert(peerID) }
         )
     }
 }

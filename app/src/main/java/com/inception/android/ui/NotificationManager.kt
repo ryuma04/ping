@@ -52,6 +52,8 @@ class NotificationManager(
         private const val SUMMARY_NOTIFICATION_ID = 999
       private const val GEOHASH_SUMMARY_NOTIFICATION_ID = 998
         private const val MAX_MESSAGES_IN_NOTIFICATION = 25
+        const val CHANNEL_ID_SOS = "inception_sos_notifications"
+        const val SOS_NOTIFICATION_ID = 911
 
         // Intent extras for notification handling
         const val EXTRA_OPEN_PRIVATE_CHAT = "open_private_chat"
@@ -149,7 +151,125 @@ class NotificationManager(
                 setShowBadge(true)
             }
             systemNotificationManager.createNotificationChannel(geohashChannel)
+
+            // Emergency SOS distress alerts channel (life-safety)
+            val sosName = "Emergency SOS Distress Alerts"
+            val sosDescriptionText = "Urgent emergency distress beacons received over mesh network"
+            val sosImportance = AndroidNotificationManager.IMPORTANCE_HIGH
+            val sosChannel = NotificationChannel(CHANNEL_ID_SOS, sosName, sosImportance).apply {
+                description = sosDescriptionText
+                enableVibration(true)
+                vibrationPattern = com.inception.android.mesh.SosManager.MORSE_SOS_PATTERN
+                setShowBadge(true)
+                setBypassDnd(true)
+                lockscreenVisibility = NotificationCompat.VISIBILITY_PUBLIC
+                val alarmSound = android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_ALARM)
+                    ?: android.media.RingtoneManager.getDefaultUri(android.media.RingtoneManager.TYPE_NOTIFICATION)
+                val audioAttributes = android.media.AudioAttributes.Builder()
+                    .setUsage(android.media.AudioAttributes.USAGE_ALARM)
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .build()
+                setSound(alarmSound, audioAttributes)
+            }
+            systemNotificationManager.createNotificationChannel(sosChannel)
         }
+    }
+
+    /**
+     * Show high-priority emergency SOS heads-up alert.
+     */
+    fun showSosNotification(
+        senderPeerID: String,
+        senderNickname: String,
+        status: String,
+        batteryPct: Int,
+        geohash: String?,
+        note: String
+    ) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            SOS_NOTIFICATION_ID,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        )
+
+        val locationText = if (!geohash.isNullOrBlank()) " | Location: $geohash" else ""
+        val contentText = "Status: $status | Battery: $batteryPct%$locationText - $note"
+
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID_SOS)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle("🚨 EMERGENCY SOS: $senderNickname")
+            .setContentText(contentText)
+            .setStyle(NotificationCompat.BigTextStyle().bigText(
+                "Distress Alert from $senderNickname\n" +
+                "Status: $status\n" +
+                "Battery: $batteryPct%\n" +
+                (if (!geohash.isNullOrBlank()) "Location (geohash): $geohash\n" else "") +
+                "Note: $note"
+            ))
+            .setPriority(NotificationCompat.PRIORITY_MAX)
+            .setCategory(NotificationCompat.CATEGORY_ALARM)
+            .setVibrate(com.inception.android.mesh.SosManager.MORSE_SOS_PATTERN)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setOngoing(true)
+
+        try {
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
+                ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+            ) {
+                notificationManager.notify(SOS_NOTIFICATION_ID, builder.build())
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to post SOS notification: ${e.message}")
+        }
+    }
+
+    /**
+     * Cancel active emergency SOS notification.
+     */
+    fun cancelSosNotification() {
+        try {
+            notificationManager.cancel(SOS_NOTIFICATION_ID)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to cancel SOS notification: ${e.message}")
+        }
+    }
+
+    /**
+     * Show notification when a document/file is received on the mesh or a channel.
+     */
+    fun showPublicFileNotification(
+        senderNickname: String,
+        fileName: String,
+        fileSizeStr: String,
+        channel: String?
+    ) {
+        val channelTag = if (!channel.isNullOrBlank()) " in $channel" else " on Mesh"
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            5000,
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        val contentTitle = "📄 Received Document$channelTag"
+        val contentText = "$senderNickname shared $fileName ($fileSizeStr)"
+        val builder = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(R.drawable.ic_notification)
+            .setContentTitle(contentTitle)
+            .setContentText(contentText)
+            .setContentIntent(pendingIntent)
+            .setAutoCancel(true)
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setCategory(NotificationCompat.CATEGORY_MESSAGE)
+
+        notifySafely(5001 + (fileName.hashCode() and 0x7FFF), builder.build())
     }
 
     /**

@@ -315,13 +315,14 @@ class SecurityManager(private val encryptionService: EncryptionService, private 
             }
             
             // 2. Get Signing Public Key
-            val peerInfo = delegate?.getPeerInfo(peerID)
+            val signerPeerID = packet.senderID.toHexString()
+            val peerInfo = delegate?.getPeerInfo(signerPeerID) ?: delegate?.getPeerInfo(peerID)
             val signingPublicKey = peerInfo?.signingPublicKey
             
             if (signingPublicKey == null) {
                 // If we don't have a key (and it's not an announce), we can't verify.
                 // For security, we must reject packets from unknown peers unless it's an announce.
-                Log.w(TAG, "Signature check for $peerID: NO_SIGNING_KEY_AVAILABLE (packet type ${packet.type})")
+                Log.w(TAG, "Signature check for $peerID (signer: $signerPeerID): NO_SIGNING_KEY_AVAILABLE (packet type ${packet.type})")
                 return false
             }
             

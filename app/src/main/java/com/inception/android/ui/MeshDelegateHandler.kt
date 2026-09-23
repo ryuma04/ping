@@ -71,7 +71,8 @@ class MeshDelegateHandler(
                 }
             } else if (message.channel != null) {
                 // Channel message: AppStateStore is the source of truth for list; only manage unread
-                if (state.getJoinedChannelsValue().contains(message.channel)) {
+                val isGeohash = message.channel.startsWith("geo:")
+                if (isGeohash || state.getJoinedChannelsValue().contains(message.channel)) {
                     val channel = message.channel
                     val viewingClassic = state.getCurrentChannelValue() == channel
                     val viewingGeohash = try {
@@ -91,6 +92,41 @@ class MeshDelegateHandler(
                 // Public mesh message: AppStateStore is the source of truth; avoid double-adding to UI state
                 // Still run mention detection/notifications
                 checkAndTriggerMeshMentionNotification(message)
+            }
+
+            // Public file notification (mesh, geohash, or classic channel)
+            if (!message.isPrivate && message.type == com.inception.android.model.InceptionMessageType.File) {
+                try {
+                    val file = java.io.File(message.content)
+                    val fileName = file.name
+                    val fileSizeStr = com.inception.android.features.file.FileUtils.formatFileSize(file.length())
+                    val viewingSameChannel = when {
+                        message.channel != null -> {
+                            val ch = message.channel
+                            val viewingClassic = state.getCurrentChannelValue() == ch
+                            val viewingGeohash = if (ch.startsWith("geo:")) {
+                                val geo = ch.removePrefix("geo:")
+                                val selected = state.selectedLocationChannel.value
+                                selected is com.inception.android.geohash.ChannelID.Location && selected.channel.geohash.equals(geo, ignoreCase = true)
+                            } else false
+                            viewingClassic || viewingGeohash
+                        }
+                        else -> {
+                            state.getCurrentChannelValue() == null &&
+                            state.selectedLocationChannel.value is com.inception.android.geohash.ChannelID.Mesh
+                        }
+                    }
+                    if (!viewingSameChannel || notificationManager.getAppBackgroundState()) {
+                        notificationManager.showPublicFileNotification(
+                            senderNickname = message.sender,
+                            fileName = fileName,
+                            fileSizeStr = fileSizeStr,
+                            channel = message.channel
+                        )
+                    }
+                } catch (e: Exception) {
+                    android.util.Log.e("MeshDelegateHandler", "Failed to trigger file notification", e)
+                }
             }
             
             // Periodic cleanup

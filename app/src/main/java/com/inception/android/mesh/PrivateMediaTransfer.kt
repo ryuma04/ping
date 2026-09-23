@@ -99,7 +99,7 @@ internal class PrivateMediaTransferPreparer(
         // and packet serialization make additional full-size copies.
         if (file.content.size.toLong() > absolutePayloadUpperBound) {
             return PrivateMediaBuildOutcome.Rejected(
-                "File exceeds the private-media v1 limit of 256 final mesh fragments"
+                "File exceeds the private-media limit of $maxPrivateFragments final mesh fragments"
             )
         }
 

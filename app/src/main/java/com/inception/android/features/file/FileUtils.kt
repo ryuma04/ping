@@ -190,8 +190,34 @@ object FileUtils {
     }
 
     /**
+     * Sanitize filename to strip path traversal sequences (../, ..\, etc.)
+     * and non-alphanumeric characters, returning a safe, clean filename.
+     */
+    fun sanitizeFileName(rawName: String, fallback: String = "document"): String {
+        // 1. Strip path components & path traversal sequences
+        var cleaned = rawName.replace('\\', '/')
+            .substringAfterLast('/')
+            .replace(Regex("""\.{2,}"""), "_")
+            .trim()
+
+        // 2. Separate extension if present
+        val dotIndex = cleaned.lastIndexOf('.')
+        val base = if (dotIndex > 0) cleaned.substring(0, dotIndex) else cleaned
+        val ext = if (dotIndex > 0) cleaned.substring(dotIndex + 1) else ""
+
+        // 3. Keep alphanumeric characters for security, with safe underscore / dash
+        val safeBase = base.replace(Regex("[^A-Za-z0-9_-]"), "_")
+            .trim('_', '-')
+            .take(64)
+            .ifBlank { fallback }
+        val safeExt = ext.replace(Regex("[^A-Za-z0-9]"), "").take(10)
+
+        return if (safeExt.isNotEmpty()) "$safeBase.$safeExt" else safeBase
+    }
+
+    /**
      * Save an incoming file packet to app storage and return absolute path.
-     * Mirrors existing behavior used in MessageHandler (preserves names and folders).
+     * Documents are stored under context.cacheDir/documents/ with sanitized filenames.
      */
     fun saveIncomingFile(
         context: Context,
@@ -199,10 +225,15 @@ object FileUtils {
     ): String {
         val lowerMime = file.mimeType.lowercase()
         val isImage = lowerMime.startsWith("image/")
-        // FIX: Use cacheDir instead of filesDir to prevent storage exhaustion attacks (Issue #592)
-        // Files in cacheDir are eligible for automatic system cleanup when space is low
+        val isAudio = lowerMime.startsWith("audio/")
+        // FIX: Use cacheDir to prevent storage exhaustion attacks (Issue #592)
+        // Documents are sandboxed under cacheDir/documents/
         val baseDir = context.cacheDir
-        val subdir = if (isImage) "images/incoming" else "files/incoming"
+        val subdir = when {
+            isImage -> "images/incoming"
+            isAudio -> "audio/incoming"
+            else -> "documents"
+        }
         val dir = java.io.File(baseDir, subdir).apply { mkdirs() }
 
         fun extFromMime(m: String): String = when (m.lowercase()) {
@@ -211,15 +242,19 @@ object FileUtils {
             "image/webp" -> ".webp"
             "application/pdf" -> ".pdf"
             "text/plain" -> ".txt"
-            else -> if (isImage) ".jpg" else ".bin"
+            "text/csv" -> ".csv"
+            "text/markdown" -> ".md"
+            "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> ".docx"
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> ".xlsx"
+            else -> if (isImage) ".jpg" else if (isAudio) ".m4a" else ".bin"
         }
 
-        // Prefer transmitted original name; ensure uniqueness to avoid overwrites
-        val baseName = (file.fileName.takeIf { it.isNotBlank() }
-            ?: (if (isImage) "img" else "file"))
-            .replace(Regex("[^A-Za-z0-9._-]"), "_")
+        // Sanitize filename to prevent path traversal (../) and non-alphanumeric injections
+        val defaultName = if (isImage) "img" else if (isAudio) "audio" else "doc"
+        val rawBase = file.fileName.takeIf { it.isNotBlank() } ?: defaultName
+        val sanitized = sanitizeFileName(rawBase, defaultName)
         val ext = extFromMime(lowerMime)
-        var safeName = if (baseName.contains('.')) baseName else baseName + ext
+        var safeName = if (sanitized.contains('.')) sanitized else sanitized + ext
         var idx = 1
         while (java.io.File(dir, safeName).exists() && idx < 1000) {
             val dot = safeName.lastIndexOf('.')
@@ -257,10 +292,45 @@ object FileUtils {
                 out.outputStream().use { it.write(file.content) }
                 out.absolutePath
             } catch (_: Exception) {
-                val tmp = java.io.File.createTempFile(if (isImage) "img_" else "file_", if (isImage) ".jpg" else ".bin")
+                val tmp = java.io.File.createTempFile(
+                    if (isImage) "img_" else if (isAudio) "audio_" else "doc_",
+                    if (isImage) ".jpg" else if (isAudio) ".m4a" else ".bin",
+                    dir
+                )
                 tmp.writeBytes(file.content)
                 tmp.absolutePath
             }
+        }
+    }
+
+    /**
+     * Save a file to the system Downloads folder for external access.
+     */
+    fun saveToDownloads(context: Context, fileName: String, bytes: ByteArray): Boolean {
+        return try {
+            val safeName = sanitizeFileName(fileName)
+            if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                val contentValues = android.content.ContentValues().apply {
+                    put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, safeName)
+                    put(android.provider.MediaStore.MediaColumns.MIME_TYPE, getMimeTypeFromExtension(safeName))
+                    put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+                }
+                val uri = context.contentResolver.insert(android.provider.MediaStore.Downloads.EXTERNAL_CONTENT_URI, contentValues)
+                if (uri != null) {
+                    context.contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
+                    true
+                } else false
+            } else {
+                @Suppress("DEPRECATION")
+                val dir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                if (!dir.exists()) dir.mkdirs()
+                val file = File(dir, safeName)
+                file.writeBytes(bytes)
+                true
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to save file to downloads", e)
+            false
         }
     }
 
@@ -306,7 +376,8 @@ object FileUtils {
             val cacheDir = context.cacheDir
             val cacheDirsToClear = listOf(
                 "files/incoming",
-                "images/incoming"
+                "images/incoming",
+                "documents"
             )
             
             cacheDirsToClear.forEach { subDir ->

@@ -2,7 +2,7 @@ package com.inception.android.ui
 
 import android.view.HapticFeedbackConstants
 import com.inception.android.ui.theme.InceptionFontFamily
-// [Goose] TODO: Replace inline file attachment stub with FilePickerButton abstraction that dispatches via FileShareDispatcher
+// Modern document attachment picker wired via FilePickerButton and onSendFileNote
 
 
 import androidx.compose.material.icons.Icons
@@ -597,15 +597,29 @@ fun MessageInput(
                                         tween(InceptionMotion.QUICK_MS, easing = FastOutSlowInEasing)
                                     )
                             ) {
-                                ImagePickerButton(
-                                    onImageReady = { outPath ->
-                                        onSendImageNote(
-                                            latestSelectedPeer.value,
-                                            latestChannel.value,
-                                            outPath
-                                        )
-                                    }
-                                )
+                                Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(2.dp)
+                                ) {
+                                    ImagePickerButton(
+                                        onImageReady = { outPath ->
+                                            onSendImageNote(
+                                                latestSelectedPeer.value,
+                                                latestChannel.value,
+                                                outPath
+                                            )
+                                        }
+                                    )
+                                    FilePickerButton(
+                                        onFileReady = { outPath ->
+                                            onSendFileNote(
+                                                latestSelectedPeer.value,
+                                                latestChannel.value,
+                                                outPath
+                                            )
+                                        }
+                                    )
+                                }
                             }
 
                             // The slide-to-cancel target sits well clear of the record

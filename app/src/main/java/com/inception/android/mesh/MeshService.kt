@@ -30,6 +30,9 @@ interface MeshService {
     ): PrivateMediaPreparation
     fun cancelFileTransfer(transferId: String): Boolean
 
+    fun sendSosBeacon(payload: com.inception.android.model.SosPayload) {}
+    fun sendSosCancel(payload: com.inception.android.model.SosPayload) {}
+
     fun sendBroadcastAnnounce()
     fun sendAnnouncementToPeer(peerID: String)
 

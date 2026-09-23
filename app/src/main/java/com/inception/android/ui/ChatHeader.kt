@@ -692,10 +692,12 @@ private fun ChannelHeader(
     onSidebarClick: () -> Unit
 ) {
     val colorScheme = MaterialTheme.colorScheme
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sosManager = remember { com.inception.android.mesh.SosManager.getInstance(context) }
+    val myActiveSos by sosManager.myActiveSos.collectAsStateWithLifecycle()
+    var showSosDialog by remember { mutableStateOf(false) }
+    var showCancelSosConfirm by remember { mutableStateOf(false) }
 
-    // No back affordance: the close action on the right is the way out, exactly as in a private
-    // chat. Leaving the channel outright lives on its row in the network sheet, so it does not
-    // need a second, easily-mistaken home next to the exit.
     ConversationHeader(
         leadingIconRes = R.drawable.ic_spec_chat_bubbles,
         leadingIconTint = colorScheme.primary,
@@ -703,7 +705,49 @@ private fun ChannelHeader(
         title = "#$channel",
         onTitleClick = onSidebarClick
     ) {
+        EmergencySosButton(
+            isSosActive = myActiveSos != null,
+            onHoldComplete = { showSosDialog = true },
+            onActiveSosClick = { showCancelSosConfirm = true }
+        )
         CloseButton(onClick = onBackClick)
+    }
+
+    if (showSosDialog) {
+        EmergencySosDialog(
+            show = showSosDialog,
+            batteryPct = sosManager.getBatteryPercentage(),
+            geohash = sosManager.getCurrentGeohash(),
+            onDismiss = { showSosDialog = false },
+            onConfirmBroadcast = { status, note ->
+                sosManager.broadcastEmergencySos(status, note)
+            }
+        )
+    }
+
+    if (showCancelSosConfirm) {
+        AlertDialog(
+            onDismissRequest = { showCancelSosConfirm = false },
+            title = { Text("Cancel Emergency SOS?", color = Color.White) },
+            text = { Text("This will broadcast a signed cancellation packet to the mesh to let all peers know you are safe.", color = Color(0xFFDDDDDD)) },
+            containerColor = Color(0xFF221717),
+            confirmButton = {
+                Button(
+                    onClick = {
+                        sosManager.cancelEmergencySos("User marked safe")
+                        showCancelSosConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("I am Safe / Cancel SOS")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelSosConfirm = false }) {
+                    Text("Keep Active", color = Color(0xFFAAAAAA))
+                }
+            }
+        )
     }
 }
 
@@ -720,6 +764,12 @@ private fun MainHeader(
 ) {
     val colorScheme = MaterialTheme.colorScheme
     val palette = LocalInceptionPalette.current
+    val context = androidx.compose.ui.platform.LocalContext.current
+    val sosManager = remember { com.inception.android.mesh.SosManager.getInstance(context) }
+    val myActiveSos by sosManager.myActiveSos.collectAsStateWithLifecycle()
+    var showSosDialog by remember { mutableStateOf(false) }
+    var showCancelSosConfirm by remember { mutableStateOf(false) }
+
     val connectedPeers by viewModel.connectedPeers.collectAsStateWithLifecycle()
     val joinedChannels by viewModel.joinedChannels.collectAsStateWithLifecycle()
     val hasUnreadChannels by viewModel.unreadChannelMessages.collectAsStateWithLifecycle()
@@ -758,8 +808,6 @@ private fun MainHeader(
                     text = "/",
                     style = MaterialTheme.typography.bodyMedium,
                     fontSize = HeaderTextSize,
-                    // Dimmed: the slash is a separator, not content. At full brightness it competed
-                    // with the nickname beside it.
                     color = colorScheme.primary.copy(alpha = 0.45f),
                     modifier = Modifier.padding(end = 2.dp)
                 )
@@ -771,8 +819,7 @@ private fun MainHeader(
                 )
             }
 
-            // Order, left to right: unread DMs, notes, channel, people. This cluster is measured
-            // before the weighted nickname, so actions cannot be pushed off-screen by identity.
+            // Order, left to right: unread DMs, notes, channel, SOS, people.
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(2.dp)
@@ -807,6 +854,13 @@ private fun MainHeader(
                     )
                 }
 
+                // Emergency SOS Button (3-second hold to activate)
+                EmergencySosButton(
+                    isSosActive = myActiveSos != null,
+                    onHoldComplete = { showSosDialog = true },
+                    onActiveSosClick = { showCancelSosConfirm = true }
+                )
+
                 PeerCounter(
                     connectedPeers = connectedPeers.filter { it != viewModel.myPeerID },
                     joinedChannels = joinedChannels,
@@ -819,6 +873,43 @@ private fun MainHeader(
                 )
             }
         }
+    }
+
+    if (showSosDialog) {
+        EmergencySosDialog(
+            show = showSosDialog,
+            batteryPct = sosManager.getBatteryPercentage(),
+            geohash = sosManager.getCurrentGeohash(),
+            onDismiss = { showSosDialog = false },
+            onConfirmBroadcast = { status, note ->
+                sosManager.broadcastEmergencySos(status, note)
+            }
+        )
+    }
+
+    if (showCancelSosConfirm) {
+        AlertDialog(
+            onDismissRequest = { showCancelSosConfirm = false },
+            title = { Text("Cancel Emergency SOS?", color = Color.White) },
+            text = { Text("This will broadcast a signed cancellation packet to the mesh to let all peers know you are safe.", color = Color(0xFFDDDDDD)) },
+            containerColor = Color(0xFF221717),
+            confirmButton = {
+                Button(
+                    onClick = {
+                        sosManager.cancelEmergencySos("User marked safe")
+                        showCancelSosConfirm = false
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                ) {
+                    Text("I am Safe / Cancel SOS")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { showCancelSosConfirm = false }) {
+                    Text("Keep Active", color = Color(0xFFAAAAAA))
+                }
+            }
+        )
     }
 }
 

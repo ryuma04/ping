@@ -879,6 +879,48 @@ class BluetoothMeshService(private val context: Context) : TransportBridgeServic
     }
 
     /**
+     * Broadcast an emergency SOS beacon to the mesh with TTL=7.
+     */
+    fun sendSosBeacon(payload: com.inception.android.model.SosPayload) {
+        serviceScope.launch {
+            val packet = InceptionPacket(
+                version = 1u,
+                type = MessageType.SOS_BEACON.value,
+                senderID = hexStringToByteArray(myPeerID),
+                recipientID = SpecialRecipients.BROADCAST,
+                timestamp = payload.timestampMs.toULong(),
+                payload = payload.encode(),
+                signature = null,
+                ttl = MAX_TTL
+            )
+            val signed = signPacketBeforeBroadcast(packet)
+            broadcastRoutedPacket(RoutedPacket(signed))
+            try { gossipSyncManager.onPublicPacketSeen(signed) } catch (_: Exception) { }
+        }
+    }
+
+    /**
+     * Broadcast an authenticated emergency SOS cancellation to the mesh.
+     */
+    fun sendSosCancel(payload: com.inception.android.model.SosPayload) {
+        serviceScope.launch {
+            val packet = InceptionPacket(
+                version = 1u,
+                type = MessageType.SOS_CANCEL.value,
+                senderID = hexStringToByteArray(myPeerID),
+                recipientID = SpecialRecipients.BROADCAST,
+                timestamp = payload.timestampMs.toULong(),
+                payload = payload.encode(),
+                signature = null,
+                ttl = MAX_TTL
+            )
+            val signed = signPacketBeforeBroadcast(packet)
+            broadcastRoutedPacket(RoutedPacket(signed))
+            try { gossipSyncManager.onPublicPacketSeen(signed) } catch (_: Exception) { }
+        }
+    }
+
+    /**
      * Send a file over mesh as a broadcast MESSAGE (public mesh timeline/channels).
      */
     private fun sendAuthenticatedPeerState(

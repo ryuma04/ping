@@ -79,6 +79,16 @@ object TransportBridgeService {
     }
 
     /**
+     * Check if a specific transport layer is currently registered and active.
+     */
+    fun isTransportActive(id: String): Boolean = transports.containsKey(id)
+
+    /**
+     * Check if Wi-Fi Aware transport is currently registered and active.
+     */
+    fun isWifiAwareActive(): Boolean = transports.containsKey("WIFI")
+
+    /**
      * Broadcast a packet from a specific source transport to ALL other registered transports.
      * 
      * @param sourceId The ID of the transport initiating the broadcast (e.g., "BLE").

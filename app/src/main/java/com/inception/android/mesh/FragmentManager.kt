@@ -66,17 +66,10 @@ class FragmentManager {
                 Log.w(TAG, "Rejecting invalid outbound fragment limit: $maxFragments")
                 return emptyList()
             }
-            val encoded = packet.toBinaryData()
-            if (encoded == null) {
+            // Fragment the unpadded frame; each fragment will be encoded (and padded) independently
+            val fullData = packet.toBinaryData(padding = false)
+            if (fullData == null) {
                 Log.e(TAG, "Failed to encode packet to binary data")
-                return emptyList()
-            }
-
-            // Fragment the unpadded frame; each fragment will be encoded (and padded) independently - iOS fix
-            val fullData = try {
-                MessagePadding.unpad(encoded)
-            } catch (e: Exception) {
-                Log.e(TAG, "Failed to unpad data: ${e.message}", e)
                 return emptyList()
             }
 
