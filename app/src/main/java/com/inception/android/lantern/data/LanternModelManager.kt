@@ -44,7 +44,9 @@ class LanternModelManager private constructor(private val context: Context) {
 
     private val httpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)
-        .readTimeout(60, TimeUnit.SECONDS)
+        .readTimeout(120, TimeUnit.SECONDS)
+        .followRedirects(true)
+        .followSslRedirects(true)
         .build()
 
     private val coroutineScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
@@ -110,6 +112,7 @@ class LanternModelManager private constructor(private val context: Context) {
 
                 val request = Request.Builder()
                     .url(tier.downloadUrl)
+                    .header("User-Agent", "Ping-Android/1.0 (GGUF Model Downloader)")
                     .build()
 
                 httpClient.newCall(request).execute().use { response ->

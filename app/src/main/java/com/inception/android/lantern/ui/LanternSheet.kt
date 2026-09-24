@@ -5,16 +5,17 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.*
 import androidx.compose.material.icons.outlined.*
 import androidx.compose.material3.*
@@ -23,19 +24,34 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.inception.android.lantern.model.GroundedGuidance
+import com.inception.android.lantern.model.GuidanceStep
 import com.inception.android.lantern.model.LanternCategory
 import com.inception.android.lantern.model.LanternChunk
 import com.inception.android.ui.theme.SpaceMonoFamily
 import com.inception.android.ui.theme.SpaceGroteskFamily
-import com.inception.android.ui.theme.NothingBorder
-import com.inception.android.ui.theme.NothingSurface
-import com.inception.android.ui.theme.NothingSurfaceVariant
+import kotlinx.coroutines.launch
+import java.util.Locale
+
+// Nothing OS palette constants
+private val NothingBlack = Color(0xFF000000)
+private val NothingWarmLight = Color(0xFFF5F5F3)
+private val NothingBorderColor = Color(0xFF252525)
+private val NothingSurfaceDark = Color(0xFF0A0A0A)
+private val NothingCardBackground = Color(0xFF0E0E0E)
+private val NothingTextSecondary = Color(0xFF999999)
+private val NothingTextDisabled = Color(0xFF666666)
+private val NothingRed = Color(0xFFD71921)
+private val NothingWarningBackground = Color(0xFF1F0C0D)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -45,15 +61,60 @@ fun LanternSheet(
     onBroadcastMeshQuery: ((String, LanternCategory) -> Unit)? = null
 ) {
     val searchQuery by viewModel.searchQuery.collectAsStateWithLifecycle()
-    val selectedCategory by viewModel.selectedCategory.collectAsStateWithLifecycle()
-    val searchResult by viewModel.searchResult.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val showModelHub by viewModel.showModelHub.collectAsStateWithLifecycle()
-    val selectedChunkForDetail by viewModel.selectedChunkForDetail.collectAsStateWithLifecycle()
     val activeTier by viewModel.modelManager.activeTier.collectAsStateWithLifecycle()
     val focusManager = LocalFocusManager.current
+    val coroutineScope = rememberCoroutineScope()
 
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val listState = rememberLazyListState()
+
+    // Conversation history state
+    val conversationHistory = remember { mutableStateListOf<RagMessage>() }
+
+    // Helper to send a RAG query
+    val sendQuery: (String) -> Unit = { queryText ->
+        val trimmed = queryText.trim()
+        if (trimmed.isNotBlank()) {
+            conversationHistory.add(RagMessage.UserQuery(trimmed))
+            focusManager.clearFocus()
+            viewModel.onQueryChanged("")
+            coroutineScope.launch {
+                listState.animateScrollToItem(conversationHistory.size - 1)
+            }
+            viewModel.executeRagQuery(trimmed) { result ->
+                if (result.guidance != null) {
+                    conversationHistory.add(
+                        RagMessage.AiResponse(
+                            text = result.guidance.rawText,
+                            tierName = result.activeModelTier?.displayName,
+                            latencyMs = result.latencyMs,
+                            sourceCount = result.localChunks.size,
+                            guidance = result.guidance
+                        )
+                    )
+                } else if (!result.synthesizedResponse.isNullOrBlank()) {
+                    conversationHistory.add(
+                        RagMessage.AiResponse(
+                            text = result.synthesizedResponse,
+                            tierName = result.activeModelTier?.displayName,
+                            latencyMs = result.latencyMs,
+                            sourceCount = result.localChunks.size,
+                            guidance = null
+                        )
+                    )
+                } else {
+                    conversationHistory.add(
+                        RagMessage.NoResults(query = trimmed)
+                    )
+                }
+                coroutineScope.launch {
+                    listState.animateScrollToItem(conversationHistory.size - 1)
+                }
+            }
+        }
+    }
 
     com.inception.android.core.ui.component.sheet.InceptionBottomSheet(
         sheetState = sheetState,
@@ -63,203 +124,211 @@ fun LanternSheet(
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(horizontal = 16.dp)
+                .background(NothingBlack)
         ) {
-            // Header Row
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.Lightbulb,
-                        contentDescription = "Lantern",
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(26.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Lantern",
-                        style = MaterialTheme.typography.titleLarge,
-                        fontFamily = SpaceGroteskFamily,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    SuggestionChip(
-                        onClick = { viewModel.openModelHub() },
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
-                        label = {
-                            Text(
-                                text = (activeTier?.displayName?.substringBefore(" ") ?: "Fast FTS5").uppercase(),
-                                fontFamily = SpaceMonoFamily,
-                                fontSize = 10.sp,
-                                letterSpacing = 0.5.sp,
-                                color = MaterialTheme.colorScheme.primary
-                            )
-                        },
-                        icon = {
-                            Icon(
-                                imageVector = if (activeTier != null) Icons.Default.AutoAwesome else Icons.Default.FlashOn,
-                                contentDescription = null,
-                                modifier = Modifier.size(14.dp),
-                                tint = MaterialTheme.colorScheme.primary
-                            )
-                        }
-                    )
-                }
-
-                Row {
-                    IconButton(onClick = { viewModel.openModelHub() }) {
-                        Icon(
-                            imageVector = Icons.Outlined.Settings,
-                            contentDescription = "Model Hub Settings",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    IconButton(onClick = onDismiss) {
-                        Icon(
-                            imageVector = Icons.Default.Close,
-                            contentDescription = "Close",
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = { viewModel.onQueryChanged(it) },
-                placeholder = {
-                    Text(
-                        "// SEARCH GUIDANCE (E.G. WATER, CPR)...",
-                        fontFamily = SpaceMonoFamily,
-                        fontSize = 11.sp,
-                        letterSpacing = 0.5.sp
-                    )
-                },
-                textStyle = MaterialTheme.typography.bodyMedium.copy(
-                    fontFamily = SpaceGroteskFamily,
-                    fontSize = 14.sp
-                ),
-                leadingIcon = {
-                    Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
-                },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { viewModel.onQueryChanged("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear")
-                        }
-                    }
-                },
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-                keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
-                singleLine = true,
-                shape = RoundedCornerShape(8.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
-                ),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            // Category Filter Chips
+            // ─── Header ───
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    .padding(horizontal = 16.dp, vertical = 12.dp),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                FilterChip(
-                    selected = selectedCategory == null,
-                    onClick = { viewModel.onCategorySelected(null) },
-                    shape = RoundedCornerShape(6.dp),
-                    border = BorderStroke(1.dp, if (selectedCategory == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
-                    label = {
-                        Text(
-                            "[ALL PROTOCOLS]",
-                            fontFamily = SpaceMonoFamily,
-                            fontSize = 10.sp,
-                            letterSpacing = 0.5.sp
-                        )
-                    }
-                )
-                LanternCategory.entries.forEach { category ->
-                    val isSel = selectedCategory == category
-                    FilterChip(
-                        selected = isSel,
-                        onClick = { viewModel.onCategorySelected(category) },
-                        shape = RoundedCornerShape(6.dp),
-                        border = BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
-                        label = {
+                Column {
+                    Text(
+                        text = "LANTERN",
+                        fontFamily = SpaceMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 18.sp,
+                        letterSpacing = 2.sp,
+                        color = NothingWarmLight
+                    )
+                    Spacer(modifier = Modifier.height(2.dp))
+                    Text(
+                        text = "EMERGENCY GUIDANCE ENGINE",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 9.sp,
+                        letterSpacing = 1.5.sp,
+                        color = NothingTextSecondary
+                    )
+                }
+
+                Row(horizontalArrangement = Arrangement.spacedBy(6.dp), verticalAlignment = Alignment.CenterVertically) {
+                    // Model tier indicator chip
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = Color.Transparent,
+                        border = BorderStroke(1.dp, NothingBorderColor),
+                        onClick = { viewModel.openModelHub() }
+                    ) {
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 5.dp)
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(6.dp)
+                                    .clip(CircleShape)
+                                    .background(if (activeTier != null) Color(0xFF00E676) else NothingTextDisabled)
+                            )
+                            Spacer(modifier = Modifier.width(6.dp))
                             Text(
-                                "[${category.displayName.uppercase()}]",
+                                text = (activeTier?.displayName?.substringBefore(" (")
+                                    ?: "LOCAL RAG").uppercase(Locale.ROOT),
                                 fontFamily = SpaceMonoFamily,
-                                fontSize = 10.sp,
-                                letterSpacing = 0.5.sp
+                                fontSize = 9.sp,
+                                letterSpacing = 0.5.sp,
+                                color = if (activeTier != null) NothingWarmLight else NothingTextSecondary
                             )
                         }
-                    )
+                    }
+
+                    IconButton(
+                        onClick = onDismiss,
+                        modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Close",
+                            tint = NothingTextSecondary,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            // ─── Thin separator ───
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(NothingBorderColor)
+            )
 
-            // Content List
-            if (isLoading) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .weight(1f),
-                    contentAlignment = Alignment.Center
-                ) {
-                    CircularProgressIndicator()
-                }
-            } else {
-                val chunks = searchResult?.localChunks ?: emptyList()
-                val synthesized = searchResult?.synthesizedResponse
-
-                if (chunks.isEmpty() && searchQuery.isNotBlank()) {
-                    // Zero hits state -> Ask the Mesh fallback
-                    ZeroHitsFallback(
-                        query = searchQuery,
-                        category = selectedCategory ?: LanternCategory.FIRST_AID,
-                        onAskMesh = {
-                            onBroadcastMeshQuery?.invoke(searchQuery, selectedCategory ?: LanternCategory.FIRST_AID)
-                        }
+            // ─── Conversation Area ───
+            Box(
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth()
+            ) {
+                if (conversationHistory.isEmpty() && !isLoading) {
+                    // Empty state — prompt chips and guidance overview
+                    EmptyRagState(
+                        activeTierName = activeTier?.displayName,
+                        onPromptClick = sendQuery,
+                        onOpenModelHub = { viewModel.openModelHub() }
                     )
                 } else {
                     LazyColumn(
-                        verticalArrangement = Arrangement.spacedBy(14.dp),
+                        state = listState,
                         modifier = Modifier
-                            .fillMaxWidth()
-                            .weight(1f)
-                            .padding(bottom = 16.dp)
+                            .fillMaxSize()
+                            .padding(horizontal = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(16.dp),
+                        contentPadding = PaddingValues(vertical = 16.dp)
                     ) {
-                        // AI Synthesized Response Card (if available)
-                        if (!synthesized.isNullOrBlank()) {
-                            item {
-                                GroundedSynthesisCard(
-                                    responseMarkdown = synthesized,
-                                    tier = activeTier,
-                                    latencyMs = searchResult?.latencyMs ?: 0L
+                        items(conversationHistory) { message ->
+                            when (message) {
+                                is RagMessage.UserQuery -> UserQueryBubble(message.text)
+                                is RagMessage.AiResponse -> AiResponseCard(
+                                    response = message.text,
+                                    tier = message.tierName,
+                                    latencyMs = message.latencyMs,
+                                    sourceCount = message.sourceCount,
+                                    guidance = message.guidance,
+                                    onBroadcast = {
+                                        onBroadcastMeshQuery?.invoke(
+                                            message.text.take(120),
+                                            LanternCategory.FIRST_AID
+                                        )
+                                    }
+                                )
+                                is RagMessage.NoResults -> NoResultsCard(
+                                    query = message.query,
+                                    onAskMesh = {
+                                        onBroadcastMeshQuery?.invoke(
+                                            message.query,
+                                            LanternCategory.FIRST_AID
+                                        )
+                                    }
                                 )
                             }
                         }
 
-                        // Verified Manual Cards
-                        items(chunks) { chunk ->
-                            ManualChunkCard(
-                                chunk = chunk,
-                                onClick = { viewModel.selectChunkDetail(chunk) }
-                            )
+                        // Loading indicator
+                        if (isLoading) {
+                            item {
+                                LoadingIndicator()
+                            }
                         }
+                    }
+                }
+            }
+
+            // ─── Thin separator ───
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(1.dp)
+                    .background(NothingBorderColor)
+            )
+
+            // ─── Input Bar ───
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 12.dp, vertical = 10.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = { viewModel.onQueryChanged(it) },
+                    placeholder = {
+                        Text(
+                            "ASK ABOUT CPR, BLEEDING, WATER, BURNS...",
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 11.sp,
+                            letterSpacing = 0.5.sp,
+                            color = NothingTextDisabled
+                        )
+                    },
+                    textStyle = MaterialTheme.typography.bodyMedium.copy(
+                        fontFamily = SpaceGroteskFamily,
+                        fontSize = 14.sp,
+                        color = NothingWarmLight
+                    ),
+                    keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
+                    keyboardActions = KeyboardActions(
+                        onSend = { sendQuery(searchQuery) }
+                    ),
+                    singleLine = true,
+                    shape = RoundedCornerShape(6.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = NothingWarmLight,
+                        unfocusedBorderColor = NothingBorderColor,
+                        cursorColor = NothingWarmLight,
+                        focusedContainerColor = Color.Transparent,
+                        unfocusedContainerColor = Color.Transparent
+                    ),
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Send button
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = if (searchQuery.isNotBlank()) NothingWarmLight else Color.Transparent,
+                    border = BorderStroke(1.dp, if (searchQuery.isNotBlank()) NothingWarmLight else NothingBorderColor),
+                    onClick = { sendQuery(searchQuery) },
+                    modifier = Modifier.size(48.dp)
+                ) {
+                    Box(contentAlignment = Alignment.Center, modifier = Modifier.fillMaxSize()) {
+                        Icon(
+                            imageVector = Icons.Default.ArrowUpward,
+                            contentDescription = "Send",
+                            tint = if (searchQuery.isNotBlank()) NothingBlack else NothingTextDisabled,
+                            modifier = Modifier.size(20.dp)
+                        )
                     }
                 }
             }
@@ -273,273 +342,698 @@ fun LanternSheet(
             onDismiss = { viewModel.closeModelHub() }
         )
     }
-
-    // Detail Dialog for Full Manual
-    selectedChunkForDetail?.let { chunk ->
-        ManualDetailDialog(
-            chunk = chunk,
-            onDismiss = { viewModel.selectChunkDetail(null) }
-        )
-    }
 }
 
-@Composable
-private fun GroundedSynthesisCard(
-    responseMarkdown: String,
-    tier: com.inception.android.lantern.model.LanternModelTier?,
-    latencyMs: Long
-) {
-    Card(
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
-    ) {
-        Column(modifier = Modifier.padding(16.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        imageVector = Icons.Default.AutoAwesome,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(6.dp))
-                    Text(
-                        text = "AI SYNTHESIZED GUIDANCE",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontFamily = SpaceMonoFamily,
-                        fontWeight = FontWeight.Bold,
-                        fontSize = 12.sp,
-                        letterSpacing = 0.5.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                }
+// ─── Message Data Types ───
 
-                Text(
-                    text = "${tier?.parameterSize ?: ""} [${latencyMs}MS]".uppercase(),
-                    style = MaterialTheme.typography.bodySmall,
-                    fontFamily = SpaceMonoFamily,
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Text(
-                text = responseMarkdown,
-                style = MaterialTheme.typography.bodyMedium,
-                fontFamily = SpaceGroteskFamily,
-                lineHeight = 22.sp
-            )
-        }
-    }
+sealed class RagMessage {
+    data class UserQuery(val text: String) : RagMessage()
+    data class AiResponse(
+        val text: String,
+        val tierName: String?,
+        val latencyMs: Long,
+        val sourceCount: Int,
+        val guidance: GroundedGuidance? = null
+    ) : RagMessage()
+    data class NoResults(val query: String) : RagMessage()
 }
 
-@Composable
-private fun ManualChunkCard(
-    chunk: LanternChunk,
-    onClick: () -> Unit
-) {
-    Card(
-        shape = RoundedCornerShape(10.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
-            .clickable { onClick() }
-    ) {
-        Column(modifier = Modifier.padding(14.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = chunk.title,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontFamily = SpaceGroteskFamily,
-                    fontWeight = FontWeight.SemiBold,
-                    modifier = Modifier.weight(1f)
-                )
-                Text(
-                    text = "[${chunk.category.displayName.uppercase()}]",
-                    fontFamily = SpaceMonoFamily,
-                    fontSize = 10.sp,
-                    letterSpacing = 0.5.sp,
-                    color = MaterialTheme.colorScheme.primary
-                )
-            }
-
-            Spacer(modifier = Modifier.height(6.dp))
-
-            Text(
-                text = chunk.summary,
-                style = MaterialTheme.typography.bodySmall,
-                fontFamily = SpaceGroteskFamily,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
-
-            if (chunk.steps.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(10.dp))
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    chunk.steps.take(3).forEachIndexed { index, step ->
-                        Row(verticalAlignment = Alignment.Top) {
-                            Text(
-                                text = String.format("%02d.", index + 1),
-                                fontFamily = SpaceMonoFamily,
-                                fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary,
-                                fontSize = 11.sp,
-                                modifier = Modifier.width(26.dp)
-                            )
-                            Text(
-                                text = step,
-                                style = MaterialTheme.typography.bodySmall,
-                                fontFamily = SpaceGroteskFamily,
-                                maxLines = 2
-                            )
-                        }
-                    }
-                    if (chunk.steps.size > 3) {
-                        Text(
-                            text = "+ ${chunk.steps.size - 3} MORE STEPS",
-                            style = MaterialTheme.typography.labelSmall,
-                            fontFamily = SpaceMonoFamily,
-                            fontSize = 10.sp,
-                            letterSpacing = 0.5.sp,
-                            color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 26.dp, top = 2.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "[MANUAL: ${chunk.sourceManual.uppercase()}]",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = SpaceMonoFamily,
-                    fontSize = 10.sp,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                    maxLines = 1,
-                    modifier = Modifier.weight(1f)
-                )
-
-                Text(
-                    text = "[VIEW FULL]",
-                    style = MaterialTheme.typography.labelSmall,
-                    fontFamily = SpaceMonoFamily,
-                    fontSize = 11.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    fontWeight = FontWeight.Bold
-                )
-            }
-        }
-    }
-}
+// ─── UI Components ───
 
 @Composable
-private fun ZeroHitsFallback(
-    query: String,
-    category: LanternCategory,
-    onAskMesh: () -> Unit
+private fun EmptyRagState(
+    activeTierName: String?,
+    onPromptClick: (String) -> Unit,
+    onOpenModelHub: () -> Unit
 ) {
     Column(
         modifier = Modifier
-            .fillMaxWidth()
-            .padding(32.dp),
+            .fillMaxSize()
+            .padding(horizontal = 20.dp, vertical = 24.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.Center
     ) {
-        Icon(
-            imageVector = Icons.Default.SearchOff,
-            contentDescription = null,
-            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-            modifier = Modifier.size(54.dp)
+        Text(
+            text = "// 00",
+            fontFamily = SpaceMonoFamily,
+            fontSize = 32.sp,
+            fontWeight = FontWeight.Light,
+            letterSpacing = 2.sp,
+            color = NothingBorderColor
         )
+
         Spacer(modifier = Modifier.height(16.dp))
+
         Text(
-            text = "No Local Manual Found",
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold
+            text = "EMERGENCY GUIDANCE ENGINE",
+            fontFamily = SpaceMonoFamily,
+            fontSize = 13.sp,
+            letterSpacing = 2.sp,
+            fontWeight = FontWeight.Bold,
+            color = NothingWarmLight
         )
+
         Spacer(modifier = Modifier.height(6.dp))
+
         Text(
-            text = "Your offline library does not have an entry for \"$query\". You can broadcast an emergency query across the local BLE mesh.",
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+            text = "Ask any first-aid, CPR, or disaster survival question.\nSynthesized with zero hallucination from verified offline manuals.",
+            fontFamily = SpaceGroteskFamily,
+            fontSize = 13.sp,
+            color = NothingTextSecondary,
+            textAlign = TextAlign.Center,
+            lineHeight = 19.sp
         )
-        Spacer(modifier = Modifier.height(20.dp))
-        Button(
-            onClick = onAskMesh,
-            shape = RoundedCornerShape(10.dp)
+
+        Spacer(modifier = Modifier.height(24.dp))
+
+        Text(
+            text = "QUICK EMERGENCY PROTOCOLS",
+            fontFamily = SpaceMonoFamily,
+            fontSize = 9.sp,
+            letterSpacing = 1.sp,
+            color = NothingTextDisabled
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Quick prompt chips
+        val prompts = listOf(
+            "How to perform Adult CPR",
+            "Stop severe arterial bleeding with tourniquet",
+            "Choking adult Heimlich maneuver",
+            "Purify water using household bleach",
+            "Emergency burn treatment protocol",
+            "Earthquake survival drop cover hold",
+            "Emergency distress signals for rescue"
+        )
+
+        Column(
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.fillMaxWidth()
         ) {
-            Icon(Icons.Default.CellTower, contentDescription = null, modifier = Modifier.size(18.dp))
-            Spacer(modifier = Modifier.width(8.dp))
-            Text("Ask the Mesh")
+            prompts.take(5).forEach { prompt ->
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = NothingCardBackground,
+                    border = BorderStroke(1.dp, NothingBorderColor),
+                    onClick = { onPromptClick(prompt) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.SpaceBetween
+                    ) {
+                        Text(
+                            text = prompt.uppercase(Locale.ROOT),
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 11.sp,
+                            letterSpacing = 0.5.sp,
+                            color = NothingWarmLight,
+                            modifier = Modifier.weight(1f)
+                        )
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = NothingTextDisabled,
+                            modifier = Modifier.size(14.dp)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Model Tier Status
+        Surface(
+            shape = RoundedCornerShape(6.dp),
+            color = Color.Transparent,
+            border = BorderStroke(1.dp, NothingBorderColor),
+            onClick = onOpenModelHub
+        ) {
+            Row(
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Memory,
+                    contentDescription = null,
+                    tint = NothingTextSecondary,
+                    modifier = Modifier.size(14.dp)
+                )
+                Text(
+                    text = if (activeTierName != null) {
+                        "ACTIVE ENGINE: ${activeTierName.substringBefore(" (").uppercase(Locale.ROOT)}"
+                    } else {
+                        "ENGINE: ON-DEVICE LOCAL RAG (TAP TO ADD SLM)"
+                    },
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 9.sp,
+                    letterSpacing = 0.5.sp,
+                    color = NothingTextSecondary
+                )
+            }
         }
     }
 }
 
 @Composable
-private fun ManualDetailDialog(
-    chunk: LanternChunk,
-    onDismiss: () -> Unit
+private fun UserQueryBubble(text: String) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.End
+    ) {
+        Surface(
+            shape = RoundedCornerShape(topStart = 12.dp, topEnd = 4.dp, bottomStart = 12.dp, bottomEnd = 12.dp),
+            color = Color(0xFF161616),
+            border = BorderStroke(1.dp, NothingBorderColor)
+        ) {
+            Text(
+                text = text,
+                fontFamily = SpaceGroteskFamily,
+                fontSize = 14.sp,
+                color = NothingWarmLight,
+                modifier = Modifier
+                    .padding(horizontal = 14.dp, vertical = 10.dp)
+                    .widthIn(max = 280.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun AiResponseCard(
+    response: String,
+    tier: String?,
+    latencyMs: Long,
+    sourceCount: Int,
+    guidance: GroundedGuidance?,
+    onBroadcast: () -> Unit
 ) {
-    AlertDialog(
-        onDismissRequest = onDismiss,
-        title = {
-            Column {
-                Text(text = chunk.title, style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold)
-                Text(text = "Source: ${chunk.sourceManual}", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+    val clipboardManager = LocalClipboardManager.current
+    var copied by remember { mutableStateOf(false) }
+
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.Start
+    ) {
+        // Metadata header line
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.SpaceBetween,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 6.dp)
+        ) {
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.spacedBy(6.dp)
+            ) {
+                Text(
+                    text = "LANTERN AI",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 9.sp,
+                    letterSpacing = 1.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = NothingWarmLight
+                )
+                Text(
+                    text = "// ${(tier?.substringBefore(" (") ?: "LOCAL RAG").uppercase(Locale.ROOT)} [GROUNDED]",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 9.sp,
+                    letterSpacing = 0.5.sp,
+                    color = NothingTextDisabled
+                )
             }
-        },
-        text = {
-            LazyColumn(modifier = Modifier.fillMaxWidth()) {
-                item {
+
+            Text(
+                text = "${latencyMs}MS",
+                fontFamily = SpaceMonoFamily,
+                fontSize = 9.sp,
+                letterSpacing = 0.5.sp,
+                color = NothingTextDisabled
+            )
+        }
+
+        // Main response container
+        Surface(
+            shape = RoundedCornerShape(topStart = 4.dp, topEnd = 12.dp, bottomStart = 12.dp, bottomEnd = 12.dp),
+            color = NothingCardBackground,
+            border = BorderStroke(1.dp, NothingBorderColor),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(modifier = Modifier.padding(16.dp)) {
+                if (guidance != null) {
+                    // Render Structured Grounded Guidance
+                    StructuredGuidanceContent(guidance = guidance)
+                } else {
+                    // Fallback to formatted text
+                    FormattedResponseText(response)
+                }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Footer separator
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(1.dp)
+                        .background(NothingBorderColor)
+                )
+
+                Spacer(modifier = Modifier.height(10.dp))
+
+                // Action buttons: Copy & Broadcast
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
                     Text(
-                        text = chunk.contentMarkdown,
-                        style = MaterialTheme.typography.bodyMedium,
-                        lineHeight = 22.sp
+                        text = "${sourceCount} SOURCE${if (sourceCount != 1) "S" else ""} VERIFIED",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 9.sp,
+                        letterSpacing = 0.5.sp,
+                        color = NothingTextDisabled
                     )
-                    if (chunk.steps.isNotEmpty()) {
-                        Spacer(modifier = Modifier.height(16.dp))
-                        Text(
-                            text = "Action Steps:",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        chunk.steps.forEachIndexed { i, step ->
-                            Row(modifier = Modifier.padding(vertical = 4.dp)) {
-                                Text("${i + 1}. ", fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                                Text(step, style = MaterialTheme.typography.bodyMedium)
+
+                    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, NothingBorderColor),
+                            onClick = {
+                                val textToCopy = guidance?.rawText ?: response
+                                clipboardManager.setText(AnnotatedString(textToCopy))
+                                copied = true
+                            }
+                        ) {
+                            Text(
+                                text = if (copied) "COPIED" else "COPY",
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 9.sp,
+                                letterSpacing = 0.5.sp,
+                                color = if (copied) Color(0xFF00E676) else NothingTextSecondary,
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
+                            )
+                        }
+
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, NothingBorderColor),
+                            onClick = onBroadcast
+                        ) {
+                            Row(
+                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(4.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.CellTower,
+                                    contentDescription = null,
+                                    tint = NothingTextSecondary,
+                                    modifier = Modifier.size(10.dp)
+                                )
+                                Text(
+                                    text = "MESH",
+                                    fontFamily = SpaceMonoFamily,
+                                    fontSize = 9.sp,
+                                    letterSpacing = 0.5.sp,
+                                    color = NothingTextSecondary
+                                )
                             }
                         }
                     }
                 }
             }
-        },
-        confirmButton = {
-            TextButton(onClick = onDismiss) {
-                Text("Close")
+        }
+    }
+}
+
+/**
+ * Renders structured emergency guidance:
+ * - Situation-aware opening headline
+ * - Urgent safety warning banner
+ * - Key metrics specification pill
+ * - Discrete, numbered step cards
+ * - Follow-up advice & verified authority attribution
+ */
+@Composable
+private fun StructuredGuidanceContent(guidance: GroundedGuidance) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        // 1. Personalized Headline
+        Text(
+            text = guidance.headline,
+            fontFamily = SpaceGroteskFamily,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = NothingWarmLight,
+            lineHeight = 21.sp
+        )
+
+        // 2. Urgent Precaution Banner (if present)
+        if (!guidance.urgentWarning.isNullOrBlank()) {
+            Surface(
+                shape = RoundedCornerShape(6.dp),
+                color = NothingWarningBackground,
+                border = BorderStroke(1.dp, NothingRed.copy(alpha = 0.6f)),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Warning,
+                        contentDescription = "Warning",
+                        tint = NothingRed,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Column {
+                        Text(
+                            text = "CRITICAL PRECAUTION",
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 9.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 1.sp,
+                            color = NothingRed
+                        )
+                        Spacer(modifier = Modifier.height(2.dp))
+                        Text(
+                            text = guidance.urgentWarning,
+                            fontFamily = SpaceGroteskFamily,
+                            fontSize = 13.sp,
+                            color = NothingWarmLight,
+                            lineHeight = 18.sp
+                        )
+                    }
+                }
             }
         }
-    )
+
+        // 3. Key Metrics Pill Bar (if present)
+        if (!guidance.keyMetrics.isNullOrBlank()) {
+            Surface(
+                shape = RoundedCornerShape(4.dp),
+                color = NothingBlack,
+                border = BorderStroke(1.dp, NothingBorderColor),
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Row(
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(6.dp)
+                ) {
+                    Text(
+                        text = "SPECS:",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 9.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 0.5.sp,
+                        color = NothingTextSecondary
+                    )
+                    Text(
+                        text = guidance.keyMetrics.uppercase(Locale.ROOT),
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 9.sp,
+                        letterSpacing = 0.5.sp,
+                        color = NothingWarmLight
+                    )
+                }
+            }
+        }
+
+        // 4. Action Steps
+        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            guidance.steps.forEach { step ->
+                StepCard(step = step)
+            }
+        }
+
+        // 5. Follow-Up Advice
+        if (!guidance.followUpAdvice.isNullOrBlank()) {
+            Text(
+                text = guidance.followUpAdvice,
+                fontFamily = SpaceGroteskFamily,
+                fontSize = 13.sp,
+                color = NothingTextSecondary,
+                lineHeight = 18.sp,
+                modifier = Modifier.padding(top = 4.dp)
+            )
+        }
+
+        // 6. Source Attribution
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp),
+            modifier = Modifier.padding(top = 4.dp)
+        ) {
+            Icon(
+                imageVector = Icons.Default.Verified,
+                contentDescription = null,
+                tint = NothingTextDisabled,
+                modifier = Modifier.size(12.dp)
+            )
+            Text(
+                text = guidance.sourceManual.uppercase(Locale.ROOT),
+                fontFamily = SpaceMonoFamily,
+                fontSize = 9.sp,
+                letterSpacing = 0.5.sp,
+                color = NothingTextDisabled
+            )
+        }
+    }
+}
+
+@Composable
+private fun StepCard(step: GuidanceStep) {
+    Surface(
+        shape = RoundedCornerShape(6.dp),
+        color = NothingBlack,
+        border = BorderStroke(1.dp, NothingBorderColor),
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Row(
+            modifier = Modifier.padding(10.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalAlignment = Alignment.Top
+        ) {
+            // Step number pill
+            Surface(
+                shape = RoundedCornerShape(3.dp),
+                color = Color(0xFF1C1C1C),
+                modifier = Modifier.size(24.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center) {
+                    Text(
+                        text = String.format(Locale.ROOT, "%02d", step.number),
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 10.sp,
+                        fontWeight = FontWeight.Bold,
+                        color = NothingWarmLight
+                    )
+                }
+            }
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = step.title.uppercase(Locale.ROOT),
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    color = NothingWarmLight
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = step.instruction,
+                    fontFamily = SpaceGroteskFamily,
+                    fontSize = 13.sp,
+                    color = NothingWarmLight.copy(alpha = 0.85f),
+                    lineHeight = 19.sp
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Fallback renderer for arbitrary formatted markdown responses.
+ */
+@Composable
+private fun FormattedResponseText(response: String) {
+    val lines = response.split("\n")
+
+    Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+        for (line in lines) {
+            val trimmed = line.trim()
+            when {
+                trimmed.isEmpty() -> Spacer(modifier = Modifier.height(4.dp))
+                trimmed.startsWith("---") -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(vertical = 4.dp)
+                            .height(1.dp)
+                            .background(NothingBorderColor)
+                    )
+                }
+                trimmed.matches(Regex("^\\d+\\.\\s.*")) -> {
+                    val stepNum = trimmed.substringBefore(".").trim()
+                    val stepText = trimmed.substringAfter(".").trim()
+                        .replace("**", "")
+                        .replace(Regex("^Step \\d+:\\s*", RegexOption.IGNORE_CASE), "")
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        Text(
+                            text = String.format(Locale.ROOT, "%02d", stepNum.toIntOrNull() ?: 0),
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = NothingWarmLight,
+                            modifier = Modifier.width(22.dp)
+                        )
+                        Text(
+                            text = stepText,
+                            fontFamily = SpaceGroteskFamily,
+                            fontSize = 14.sp,
+                            color = NothingWarmLight.copy(alpha = 0.9f),
+                            lineHeight = 20.sp
+                        )
+                    }
+                }
+                trimmed.startsWith("###") || trimmed.startsWith("**") -> {
+                    val cleaned = trimmed
+                        .removePrefix("###")
+                        .replace("**", "")
+                        .trim()
+                    Text(
+                        text = cleaned.uppercase(Locale.ROOT),
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 11.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 1.sp,
+                        color = NothingWarmLight,
+                        modifier = Modifier.padding(top = 4.dp)
+                    )
+                }
+                else -> {
+                    val cleaned = trimmed.replace("**", "")
+                    Text(
+                        text = cleaned,
+                        fontFamily = SpaceGroteskFamily,
+                        fontSize = 14.sp,
+                        color = NothingWarmLight.copy(alpha = 0.85f),
+                        lineHeight = 21.sp
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun NoResultsCard(
+    query: String,
+    onAskMesh: () -> Unit
+) {
+    Column(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.Start
+    ) {
+        Text(
+            text = "LANTERN // NO LOCAL MATCH",
+            fontFamily = SpaceMonoFamily,
+            fontSize = 9.sp,
+            letterSpacing = 1.sp,
+            fontWeight = FontWeight.Bold,
+            color = NothingTextSecondary,
+            modifier = Modifier.padding(bottom = 6.dp)
+        )
+
+        Surface(
+            shape = RoundedCornerShape(topStart = 4.dp, topEnd = 12.dp, bottomStart = 12.dp, bottomEnd = 12.dp),
+            color = NothingCardBackground,
+            border = BorderStroke(1.dp, NothingBorderColor),
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "No verified manual found for \"$query\" in local storage.",
+                    fontFamily = SpaceGroteskFamily,
+                    fontSize = 13.sp,
+                    color = NothingTextSecondary,
+                    textAlign = TextAlign.Center
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                Surface(
+                    shape = RoundedCornerShape(6.dp),
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, NothingBorderColor),
+                    onClick = onAskMesh
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CellTower,
+                            contentDescription = null,
+                            tint = NothingWarmLight,
+                            modifier = Modifier.size(14.dp)
+                        )
+                        Text(
+                            text = "BROADCAST QUERY TO MESH",
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 10.sp,
+                            letterSpacing = 1.sp,
+                            color = NothingWarmLight
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LoadingIndicator() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.Start,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = "LANTERN",
+            fontFamily = SpaceMonoFamily,
+            fontSize = 9.sp,
+            letterSpacing = 1.sp,
+            fontWeight = FontWeight.Bold,
+            color = NothingTextSecondary
+        )
+        Spacer(modifier = Modifier.width(8.dp))
+        Text(
+            text = "[SYNTHESIZING GROUNDED GUIDANCE...]",
+            fontFamily = SpaceMonoFamily,
+            fontSize = 9.sp,
+            letterSpacing = 0.5.sp,
+            color = NothingTextDisabled
+        )
+    }
 }

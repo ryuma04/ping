@@ -129,4 +129,35 @@ class LanternViewModel(application: Application) : AndroidViewModel(application)
             onQueryChanged(_searchQuery.value)
         }
     }
+
+    /**
+     * Execute a RAG query and deliver results via callback.
+     * Used by the conversational RAG chat interface.
+     */
+    fun executeRagQuery(query: String, onResult: (LanternSearchResult) -> Unit) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            try {
+                val result = searchEngine.query(query, null)
+                onResult(result)
+            } catch (t: Throwable) {
+                android.util.Log.e("LanternViewModel", "Error executing RAG query", t)
+                onResult(
+                    LanternSearchResult(
+                        query = query,
+                        category = null,
+                        localChunks = emptyList(),
+                        synthesizedResponse = null,
+                        matchedSnippet = null,
+                        latencyMs = 0L,
+                        isFromModel = false,
+                        isFromMesh = false,
+                        activeModelTier = null
+                    )
+                )
+            } finally {
+                _isLoading.value = false
+            }
+        }
+    }
 }

@@ -1,5 +1,6 @@
 package com.inception.android.lantern.ui
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
@@ -20,6 +21,17 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inception.android.lantern.model.LanternModelTier
 import com.inception.android.lantern.model.ModelDownloadState
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+
+// Nothing OS palette constants
+private val NothingBlack = Color(0xFF000000)
+private val NothingWarmLight = Color(0xFFF5F5F3)
+private val NothingBorderColor = Color(0xFF252525)
+private val NothingSurfaceDark = Color(0xFF0A0A0A)
+private val NothingTextSecondary = Color(0xFF999999)
+private val NothingTextDisabled = Color(0xFF666666)
+private val NothingRed = Color(0xFFD71921)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -38,8 +50,10 @@ fun LanternModelHubSheet(
         Column(
             modifier = Modifier
                 .fillMaxWidth()
+                .background(NothingBlack)
                 .padding(horizontal = 20.dp, vertical = 8.dp)
         ) {
+            // ─── Header ───
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -47,57 +61,58 @@ fun LanternModelHubSheet(
             ) {
                 Column {
                     Text(
-                        text = "Lantern Model Hub",
-                        style = MaterialTheme.typography.titleLarge,
+                        text = "MODEL HUB",
+                        fontFamily = SpaceMonoFamily,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.primary
+                        fontSize = 16.sp,
+                        letterSpacing = 2.sp,
+                        color = NothingWarmLight
                     )
+                    Spacer(modifier = Modifier.height(2.dp))
                     Text(
-                        text = "On-Device AI Guidance Engines",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = "ON-DEVICE AI ENGINES",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 9.sp,
+                        letterSpacing = 1.5.sp,
+                        color = NothingTextSecondary
                     )
                 }
 
-                IconButton(onClick = onDismiss) {
+                IconButton(
+                    onClick = onDismiss,
+                    modifier = Modifier.size(32.dp)
+                ) {
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Close",
-                        tint = MaterialTheme.colorScheme.onSurface
+                        tint = NothingTextSecondary,
+                        modifier = Modifier.size(18.dp)
                     )
                 }
             }
 
             Spacer(modifier = Modifier.height(12.dp))
 
+            // Info banner
             Surface(
-                color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
-                shape = RoundedCornerShape(12.dp),
-                modifier = Modifier.fillMaxWidth()
+                shape = RoundedCornerShape(6.dp),
+                color = Color.Transparent,
+                border = BorderStroke(1.dp, NothingBorderColor)
             ) {
-                Row(
-                    modifier = Modifier.padding(12.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Wifi,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.size(24.dp)
-                    )
-                    Spacer(modifier = Modifier.width(10.dp))
-                    Text(
-                        text = "Download once on Wi-Fi. Models execute 100% offline in private storage with zero cellular or internet access required.",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                Text(
+                    text = "DOWNLOAD ONCE ON WI-FI. MODELS RUN 100% OFFLINE IN PRIVATE STORAGE.",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 9.sp,
+                    letterSpacing = 0.5.sp,
+                    color = NothingTextSecondary,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
+                )
             }
 
             Spacer(modifier = Modifier.height(16.dp))
 
             LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 24.dp)
@@ -135,17 +150,10 @@ private fun PureKnowledgeCard(
     isActive: Boolean,
     onSelect: () -> Unit
 ) {
-    val borderColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-
-    Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(width = if (isActive) 2.dp else 1.dp, color = borderColor, shape = RoundedCornerShape(14.dp))
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, if (isActive) NothingWarmLight else NothingBorderColor)
     ) {
         Row(
             modifier = Modifier
@@ -155,35 +163,59 @@ private fun PureKnowledgeCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
                     Text(
-                        text = "Default: Verified Manuals Only",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                        text = "VERIFIED MANUALS ONLY",
+                        fontFamily = SpaceMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 0.5.sp,
+                        color = NothingWarmLight
                     )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    SuggestionChip(
-                        onClick = {},
-                        label = { Text("0 MB", fontSize = 11.sp) }
+                    Text(
+                        text = "0 MB",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 10.sp,
+                        color = NothingTextDisabled
                     )
                 }
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Fastest response, 0 MB download, works on 1% battery using native SQLite FTS5 search.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                    text = "Fastest. Works on 1% battery. SQLite FTS5 search.",
+                    fontFamily = SpaceGroteskFamily,
+                    fontSize = 12.sp,
+                    color = NothingTextSecondary
                 )
             }
 
             Spacer(modifier = Modifier.width(12.dp))
 
             if (isActive) {
-                Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                    Text("ACTIVE", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = MaterialTheme.colorScheme.onPrimary)
-                }
+                Text(
+                    text = "[ACTIVE]",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
+                    letterSpacing = 1.sp,
+                    color = NothingWarmLight
+                )
             } else {
-                OutlinedButton(onClick = onSelect) {
-                    Text("Select")
+                Surface(
+                    shape = RoundedCornerShape(4.dp),
+                    color = Color.Transparent,
+                    border = BorderStroke(1.dp, NothingBorderColor),
+                    onClick = onSelect
+                ) {
+                    Text(
+                        text = "SELECT",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp,
+                        color = NothingWarmLight,
+                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                    )
                 }
             }
         }
@@ -200,17 +232,10 @@ private fun ModelTierCard(
     onActivate: () -> Unit,
     onDelete: () -> Unit
 ) {
-    val borderColor = if (isActive) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outlineVariant
-
-    Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (isActive) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f)
-            else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.35f)
-        ),
-        modifier = Modifier
-            .fillMaxWidth()
-            .border(width = if (isActive) 2.dp else 1.dp, color = borderColor, shape = RoundedCornerShape(14.dp))
+    Surface(
+        shape = RoundedCornerShape(8.dp),
+        color = Color.Transparent,
+        border = BorderStroke(1.dp, if (isActive) NothingWarmLight else NothingBorderColor)
     ) {
         Column(
             modifier = Modifier
@@ -223,37 +248,54 @@ private fun ModelTierCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = tier.displayName,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = tier.displayName.uppercase(),
+                    fontFamily = SpaceMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 12.sp,
+                    letterSpacing = 0.5.sp,
+                    color = NothingWarmLight
                 )
 
                 if (isActive) {
-                    Badge(containerColor = MaterialTheme.colorScheme.primary) {
-                        Text("ACTIVE", modifier = Modifier.padding(horizontal = 6.dp, vertical = 2.dp), color = MaterialTheme.colorScheme.onPrimary)
-                    }
+                    Text(
+                        text = "[ACTIVE]",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 10.sp,
+                        letterSpacing = 1.sp,
+                        color = NothingWarmLight
+                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(4.dp))
             Text(
                 text = tier.description,
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
+                fontFamily = SpaceGroteskFamily,
+                fontSize = 12.sp,
+                color = NothingTextSecondary
             )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                AssistChip(
-                    onClick = {},
-                    label = { Text("${tier.downloadSizeBytes / 1_000_000} MB", fontSize = 11.sp) },
-                    leadingIcon = { Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(14.dp)) }
+            // Specs row
+            Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    text = "${tier.downloadSizeBytes / 1_000_000} MB",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
+                    color = NothingTextDisabled
                 )
-                AssistChip(
-                    onClick = {},
-                    label = { Text("~${tier.ramRequirementMb} MB RAM", fontSize = 11.sp) },
-                    leadingIcon = { Icon(Icons.Default.Memory, contentDescription = null, modifier = Modifier.size(14.dp)) }
+                Text(
+                    text = "~${tier.ramRequirementMb} MB RAM",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
+                    color = NothingTextDisabled
+                )
+                Text(
+                    text = tier.parameterSize.uppercase(),
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
+                    color = NothingTextDisabled
                 )
             }
 
@@ -261,14 +303,35 @@ private fun ModelTierCard(
 
             when (state) {
                 is ModelDownloadState.Idle -> {
-                    Button(
+                    Surface(
+                        shape = RoundedCornerShape(4.dp),
+                        color = Color.Transparent,
+                        border = BorderStroke(1.dp, NothingBorderColor),
                         onClick = onDownload,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(8.dp)
+                        modifier = Modifier.fillMaxWidth()
                     ) {
-                        Icon(Icons.Default.Download, contentDescription = null, modifier = Modifier.size(18.dp))
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text("Download Model (${tier.downloadSizeBytes / 1_000_000} MB)")
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 10.dp),
+                            horizontalArrangement = Arrangement.Center,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Icon(
+                                Icons.Default.Download,
+                                contentDescription = null,
+                                tint = NothingWarmLight,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = "DOWNLOAD (${tier.downloadSizeBytes / 1_000_000} MB)",
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 11.sp,
+                                letterSpacing = 0.5.sp,
+                                color = NothingWarmLight
+                            )
+                        }
                     }
                 }
 
@@ -279,15 +342,18 @@ private fun ModelTierCard(
                             horizontalArrangement = Arrangement.SpaceBetween
                         ) {
                             Text(
-                                text = "Downloading...",
-                                style = MaterialTheme.typography.bodySmall,
-                                fontWeight = FontWeight.Medium
+                                text = "DOWNLOADING...",
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.5.sp,
+                                color = NothingTextSecondary
                             )
                             Text(
                                 text = "${state.progressPercent}%",
-                                style = MaterialTheme.typography.bodySmall,
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 10.sp,
                                 fontWeight = FontWeight.Bold,
-                                color = MaterialTheme.colorScheme.primary
+                                color = NothingWarmLight
                             )
                         }
                         Spacer(modifier = Modifier.height(6.dp))
@@ -295,15 +361,26 @@ private fun ModelTierCard(
                             progress = { state.progressPercent / 100f },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .height(2.dp),
+                            color = NothingWarmLight,
+                            trackColor = NothingBorderColor
                         )
                         Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedButton(
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, NothingBorderColor),
                             onClick = onCancel,
                             modifier = Modifier.align(Alignment.End)
                         ) {
-                            Text("Cancel")
+                            Text(
+                                text = "CANCEL",
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 10.sp,
+                                letterSpacing = 1.sp,
+                                color = NothingTextSecondary,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                            )
                         }
                     }
                 }
@@ -314,20 +391,45 @@ private fun ModelTierCard(
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(Icons.Default.CheckCircle, contentDescription = null, tint = Color(0xFF4CAF50), modifier = Modifier.size(20.dp))
-                            Spacer(modifier = Modifier.width(6.dp))
-                            Text("Ready Offline", style = MaterialTheme.typography.bodyMedium, color = Color(0xFF4CAF50))
-                        }
+                        Text(
+                            text = "[READY OFFLINE]",
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp,
+                            color = NothingWarmLight
+                        )
 
                         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                             if (!isActive) {
-                                Button(onClick = onActivate) {
-                                    Text("Activate")
+                                Surface(
+                                    shape = RoundedCornerShape(4.dp),
+                                    color = NothingWarmLight,
+                                    onClick = onActivate
+                                ) {
+                                    Text(
+                                        text = "ACTIVATE",
+                                        fontFamily = SpaceMonoFamily,
+                                        fontSize = 10.sp,
+                                        letterSpacing = 1.sp,
+                                        color = NothingBlack,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
                                 }
                             }
-                            IconButton(onClick = onDelete) {
-                                Icon(Icons.Default.DeleteOutline, contentDescription = "Delete", tint = MaterialTheme.colorScheme.error)
+                            Surface(
+                                shape = RoundedCornerShape(4.dp),
+                                color = Color.Transparent,
+                                border = BorderStroke(1.dp, NothingRed.copy(alpha = 0.5f)),
+                                onClick = onDelete
+                            ) {
+                                Text(
+                                    text = "DELETE",
+                                    fontFamily = SpaceMonoFamily,
+                                    fontSize = 10.sp,
+                                    letterSpacing = 1.sp,
+                                    color = NothingRed,
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
                             }
                         }
                     }
@@ -336,13 +438,31 @@ private fun ModelTierCard(
                 is ModelDownloadState.Error -> {
                     Column(modifier = Modifier.fillMaxWidth()) {
                         Text(
-                            text = "Error: ${state.message}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
+                            text = "[ERROR] ${state.message}",
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp,
+                            color = NothingRed
                         )
-                        Spacer(modifier = Modifier.height(6.dp))
-                        Button(onClick = onDownload, modifier = Modifier.fillMaxWidth()) {
-                            Text("Retry Download")
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Surface(
+                            shape = RoundedCornerShape(4.dp),
+                            color = Color.Transparent,
+                            border = BorderStroke(1.dp, NothingBorderColor),
+                            onClick = onDownload,
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            Text(
+                                text = "RETRY DOWNLOAD",
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 11.sp,
+                                letterSpacing = 0.5.sp,
+                                color = NothingWarmLight,
+                                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(vertical = 10.dp)
+                            )
                         }
                     }
                 }

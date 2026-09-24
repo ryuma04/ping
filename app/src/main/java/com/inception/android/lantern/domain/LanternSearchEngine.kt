@@ -47,14 +47,15 @@ class LanternSearchEngine private constructor(context: Context) {
         val chunks = matches.map { it.first }
         val topSnippet = matches.firstOrNull()?.second
 
-        // 3. Attempt SLM synthesis if model is active and battery permits
+        // 3. Generate grounded guidance and synthesized response
         val activeTier = modelManager.activeTier.value
-        val synthesized = if (chunks.isNotEmpty() && activeTier != null) {
-            inferenceEngine.synthesize(trimmed, chunks, activeTier)
+        val guidance = if (chunks.isNotEmpty()) {
+            inferenceEngine.generateGroundedGuidance(trimmed, chunks, activeTier)
         } else {
             null
         }
 
+        val synthesized = guidance?.rawText
         val latency = System.currentTimeMillis() - startTime
         Log.d(TAG, "Search completed for '$trimmed': ${chunks.size} chunks, synth=${synthesized != null} in ${latency}ms")
 
@@ -65,9 +66,10 @@ class LanternSearchEngine private constructor(context: Context) {
             synthesizedResponse = synthesized,
             matchedSnippet = topSnippet,
             latencyMs = latency,
-            isFromModel = synthesized != null,
+            isFromModel = activeTier != null,
             isFromMesh = false,
-            activeModelTier = activeTier
+            activeModelTier = activeTier,
+            guidance = guidance
         )
     }
 

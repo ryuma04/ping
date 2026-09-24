@@ -54,30 +54,30 @@ enum class LanternModelTier(
         displayName = "Ultra-Lightweight (SmolLM2)",
         description = "Optimized for budget devices and emergency low-power states.",
         parameterSize = "360M Params (4-bit)",
-        downloadSizeBytes = 195_000_000L, // ~195 MB
+        downloadSizeBytes = 260_000_000L, // ~260 MB
         ramRequirementMb = 350,
-        downloadUrl = "https://huggingface.co/HuggingFaceTB/SmolLM2-360M-Instruct-GGUF/resolve/main/smollm2-360m-instruct-q4_k_m.gguf",
-        fileName = "smollm2_360m_q4.bin"
+        downloadUrl = "https://huggingface.co/bartowski/SmolLM2-360M-Instruct-GGUF/resolve/main/SmolLM2-360M-Instruct-Q4_K_M.gguf",
+        fileName = "smollm2_360m_q4.gguf"
     ),
     TIER_2_BALANCED(
         tierId = "qwen25_05b_q4",
         displayName = "Balanced Guidance (Qwen2.5)",
         description = "Excellent reasoning and step-by-step instruction synthesis for mid-range phones.",
         parameterSize = "0.5B Params (4-bit)",
-        downloadSizeBytes = 380_000_000L, // ~380 MB
+        downloadSizeBytes = 400_000_000L, // ~400 MB
         ramRequirementMb = 700,
-        downloadUrl = "https://huggingface.co/Qwen/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/qwen2.5-0.5b-instruct-q4_k_m.gguf",
-        fileName = "qwen25_05b_q4.bin"
+        downloadUrl = "https://huggingface.co/bartowski/Qwen2.5-0.5B-Instruct-GGUF/resolve/main/Qwen2.5-0.5B-Instruct-Q4_K_M.gguf",
+        fileName = "qwen25_05b_q4.gguf"
     ),
     TIER_3_PRECISION(
         tierId = "gemma2_2b_q4",
         displayName = "High Precision (Gemma-2)",
         description = "Deep medical & situational comprehension for flagship hardware.",
         parameterSize = "2B Params (4-bit)",
-        downloadSizeBytes = 1_150_000_000L, // ~1.15 GB
+        downloadSizeBytes = 1_600_000_000L, // ~1.6 GB
         ramRequirementMb = 1800,
-        downloadUrl = "https://huggingface.co/google/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf",
-        fileName = "gemma2_2b_q4.bin"
+        downloadUrl = "https://huggingface.co/bartowski/gemma-2-2b-it-GGUF/resolve/main/gemma-2-2b-it-Q4_K_M.gguf",
+        fileName = "gemma2_2b_q4.gguf"
     )
 }
 
@@ -91,6 +91,26 @@ sealed class ModelDownloadState {
     data class Error(val message: String) : ModelDownloadState()
 }
 
+data class GuidanceStep(
+    val number: Int,
+    val title: String,
+    val instruction: String
+)
+
+/**
+ * Structured, personalized emergency guidance synthesized strictly from verified local manuals.
+ * Formatted for immediate comprehension in high-stress emergency scenarios.
+ */
+data class GroundedGuidance(
+    val headline: String,
+    val urgentWarning: String? = null,
+    val keyMetrics: String? = null,
+    val steps: List<GuidanceStep> = emptyList(),
+    val followUpAdvice: String? = null,
+    val sourceManual: String,
+    val rawText: String
+)
+
 /**
  * Result returned by the Lantern search & synthesis pipeline.
  */
@@ -103,7 +123,8 @@ data class LanternSearchResult(
     val latencyMs: Long = 0L,
     val isFromModel: Boolean = false,
     val isFromMesh: Boolean = false,
-    val activeModelTier: LanternModelTier? = null
+    val activeModelTier: LanternModelTier? = null,
+    val guidance: GroundedGuidance? = null
 )
 
 /**
