@@ -147,7 +147,9 @@ fun VoiceRecordButton(
         isActive = isRecording || isCapturing || courtesyActive,
         isPressed = isCapturing,
         activeColor = if (courtesyActive && !isRecording && !isCapturing) {
-            androidx.compose.ui.graphics.Color(0xFFFFB300)
+            com.inception.android.ui.theme.NothingStatusAmber
+        } else if (isRecording || isCapturing) {
+            com.inception.android.ui.theme.NothingRed
         } else androidx.compose.ui.graphics.Color.Unspecified,
         modifier = modifier
             .onGloballyPositioned { buttonCoords = it }

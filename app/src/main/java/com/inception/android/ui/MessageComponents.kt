@@ -941,17 +941,19 @@ private fun BubbleTextMessageLayout(
                 }
             }
 
+            val bubbleBg = if (isSelf) Color(0xFF141414) else Color(0xFF0C0C0C)
+            val bubbleBorder = if (isSelf) Color(0xFF2E2E2E) else Color(0xFF222222)
             Box(
                 modifier = Modifier
                     .align(if (isSelf) Alignment.CenterEnd else Alignment.CenterStart)
                     .widthIn(max = maxBubbleWidth)
                     .border(
                         width = 1.dp,
-                        color = authorColor.copy(alpha = ChatVisualTokens.BubbleBorderAlpha),
+                        color = bubbleBorder,
                         shape = bubbleShape
                     )
                     .background(
-                        color = authorColor.copy(alpha = ChatVisualTokens.BubbleBackgroundAlpha),
+                        color = bubbleBg,
                         shape = bubbleShape
                     )
                     .padding(

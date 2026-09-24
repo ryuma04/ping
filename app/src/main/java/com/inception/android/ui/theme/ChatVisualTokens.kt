@@ -11,17 +11,30 @@ import androidx.compose.ui.unit.sp
 import com.inception.android.R
 
 /**
- * The bundled Geist Mono family used throughout the app.
- *
- * Keeping the fonts in the APK preserves offline behavior and guarantees that the design-spec
- * metrics do not depend on which monospace family a device happens to provide.
+ * Nothing-inspired font families:
+ * - Space Grotesk: Primary interface text, headers, message bodies
+ * - Space Mono: Technical metadata, timestamps, badges, ALL CAPS labels
+ * - Doto: Dot-matrix display and emergency status moments
  */
-internal val InceptionFontFamily = FontFamily(
-    Font(R.font.geist_mono_regular, FontWeight.Normal),
-    Font(R.font.geist_mono_medium, FontWeight.Medium),
-    Font(R.font.geist_mono_semibold, FontWeight.SemiBold),
-    Font(R.font.geist_mono_bold, FontWeight.Bold),
+val SpaceGroteskFamily = FontFamily(
+    Font(R.font.space_grotesk, FontWeight.Normal),
+    Font(R.font.space_grotesk, FontWeight.Medium),
+    Font(R.font.space_grotesk, FontWeight.SemiBold),
+    Font(R.font.space_grotesk, FontWeight.Bold),
 )
+
+val SpaceMonoFamily = FontFamily(
+    Font(R.font.space_mono_regular, FontWeight.Normal),
+    Font(R.font.space_mono_bold, FontWeight.Bold),
+)
+
+val DotoFamily = FontFamily(
+    Font(R.font.doto, FontWeight.Normal),
+    Font(R.font.doto, FontWeight.Bold),
+)
+
+/** The primary font family used throughout the app (Space Grotesk). */
+internal val InceptionFontFamily = SpaceGroteskFamily
 
 /** Exact typography, spacing, and opacity values exported for the chat transcript. */
 internal object ChatVisualTokens {
@@ -39,8 +52,8 @@ internal object ChatVisualTokens {
 
     // MARK: - Bubble geometry (ChatUiMode.Bubbles)
 
-    /** Rounded corner on the three "free" corners of a message bubble. */
-    val BubbleCornerRadius: Dp = 16.dp
+    /** Rounded corner on the three "free" corners of a message bubble (Nothing 8-12px standard). */
+    val BubbleCornerRadius: Dp = 10.dp
 
     /** Tightened corner on the speaker's own side, giving the bubble a subtle tail. */
     val BubbleTailRadius: Dp = 4.dp
@@ -66,23 +79,25 @@ internal object ChatVisualTokens {
     const val MutedTextAlpha: Float = 0.50f
 
     val MessageBodyStyle = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Normal,
         fontSize = MessageBodyFontSize,
         lineHeight = MessageBodyLineHeight,
     )
 
     val SenderStyle = TextStyle(
-        fontFamily = InceptionFontFamily,
-        fontWeight = FontWeight.SemiBold,
+        fontFamily = SpaceMonoFamily,
+        fontWeight = FontWeight.Bold,
         fontSize = SenderFontSize,
         lineHeight = SenderLineHeight,
+        letterSpacing = 0.5.sp,
     )
 
     val SystemActionStyle = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceMonoFamily,
         fontWeight = FontWeight.Medium,
         fontSize = SystemActionFontSize,
         lineHeight = SystemActionLineHeight,
+        letterSpacing = 0.5.sp,
     )
 }

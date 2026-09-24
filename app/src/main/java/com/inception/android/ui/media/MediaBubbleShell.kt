@@ -78,15 +78,18 @@ fun MediaBubbleShell(
         modifier = modifier.fillMaxWidth(),
         horizontalAlignment = if (isSelf) Alignment.End else Alignment.Start,
     ) {
+        val bubbleBg = if (isSelf) androidx.compose.ui.graphics.Color(0xFF141414) else androidx.compose.ui.graphics.Color(0xFF0C0C0C)
+        val bubbleBorder = if (isSelf) androidx.compose.ui.graphics.Color(0xFF2E2E2E) else androidx.compose.ui.graphics.Color(0xFF222222)
+
         Box(
             modifier = Modifier
                 .border(
                     width = 1.dp,
-                    color = authorColor.copy(alpha = ChatVisualTokens.BubbleBorderAlpha),
+                    color = bubbleBorder,
                     shape = bubbleShape
                 )
                 .background(
-                    color = authorColor.copy(alpha = ChatVisualTokens.BubbleBackgroundAlpha),
+                    color = bubbleBg,
                     shape = bubbleShape
                 )
                 .combinedClickable(

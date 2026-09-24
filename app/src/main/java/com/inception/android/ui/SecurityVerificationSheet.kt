@@ -49,6 +49,18 @@ import com.inception.android.core.ui.component.button.CloseButton
 import com.inception.android.core.ui.component.sheet.LocalSheetDismiss
 import com.inception.android.core.ui.component.sheet.InceptionBottomSheet
 import com.inception.android.services.ContactDirectory
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+import com.inception.android.ui.theme.NothingRed
+import com.inception.android.ui.theme.NothingStatusGreen
+import com.inception.android.ui.theme.NothingStatusAmber
+import com.inception.android.ui.theme.NothingBorder
+import com.inception.android.ui.theme.NothingTextDisplay
+import com.inception.android.ui.theme.NothingBlack
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.OutlinedButton
 
 private data class SecurityStatusInfo(
     val text: String,
@@ -193,10 +205,10 @@ private fun buildStatusInfo(
         else -> Icons.Outlined.NoEncryption
     }
     val tint = when {
-        isVerified -> Color(0xFF32D74B)
-        sessionState == "failed" -> Color(0xFFFF3B30)
-        sessionState == "handshaking" -> Color(0xFFFF9500)
-        sessionState == "established" -> Color(0xFF32D74B)
+        isVerified -> NothingStatusGreen
+        sessionState == "failed" -> NothingRed
+        sessionState == "handshaking" -> NothingStatusAmber
+        sessionState == "established" -> NothingStatusGreen
         else -> accent.copy(alpha = 0.6f)
     }
     return SecurityStatusInfo(text, icon, tint)
@@ -212,7 +224,8 @@ private fun SecurityStatusCard(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .background(boxColor, shape = MaterialTheme.shapes.medium)
+            .border(1.dp, NothingBorder, RoundedCornerShape(10.dp))
+            .background(boxColor, shape = RoundedCornerShape(10.dp))
             .padding(16.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
@@ -226,17 +239,19 @@ private fun SecurityStatusCard(
             Text(
                 text = displayName,
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = InceptionFontFamily,
+                    fontFamily = SpaceGroteskFamily,
                     fontWeight = FontWeight.Bold
                 ),
                 color = accent
             )
             Text(
-                text = statusInfo.text,
+                text = statusInfo.text.uppercase(),
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = InceptionFontFamily
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 11.sp,
+                    letterSpacing = 0.5.sp
                 ),
-                color = accent.copy(alpha = 0.8f)
+                color = statusInfo.tint
             )
         }
     }
@@ -273,39 +288,42 @@ private fun SecurityVerificationActions(
     if (isVerified) {
         VerificationStatusRow(
             icon = Icons.Filled.Verified,
-            iconTint = Color(0xFF32D74B),
+            iconTint = NothingStatusGreen,
             text = stringResource(R.string.fingerprint_verified_label),
-            textTint = Color(0xFF32D74B)
+            textTint = NothingStatusGreen
         )
         Text(
             text = stringResource(R.string.fingerprint_verified_message),
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = InceptionFontFamily
+                fontFamily = SpaceGroteskFamily
             ),
             color = accent.copy(alpha = 0.7f),
             modifier = Modifier.fillMaxWidth(),
             textAlign = TextAlign.Center
         )
-        Button(
+        OutlinedButton(
             onClick = { fingerprint?.let(onUnverify) },
-            colors = ButtonDefaults.buttonColors(
-                containerColor = Color(0xFFFF3B30),
-                contentColor = Color.White
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, NothingRed),
+            colors = ButtonDefaults.outlinedButtonColors(
+                contentColor = NothingRed
             ),
             modifier = Modifier.fillMaxWidth()
         ) {
             Text(
-                text = stringResource(R.string.verify_remove),
-                fontFamily = InceptionFontFamily,
-                fontSize = 12.sp
+                text = stringResource(R.string.verify_remove).uppercase(),
+                fontFamily = SpaceMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 0.5.sp
             )
         }
     } else {
         VerificationStatusRow(
             icon = Icons.Filled.Warning,
-            iconTint = Color(0xFFFF9500),
+            iconTint = NothingStatusAmber,
             text = stringResource(R.string.fingerprint_not_verified_label),
-            textTint = Color(0xFFFF9500)
+            textTint = NothingStatusAmber
         )
         Text(
             text = stringResource(R.string.fingerprint_not_verified_message_fmt, displayName),
@@ -392,8 +410,9 @@ private fun FingerprintBlock(
                 Text(
                     text = formatFingerprint(fingerprint),
                     style = MaterialTheme.typography.bodyMedium.copy(
-                        fontFamily = InceptionFontFamily,
-                        fontSize = 14.sp
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 13.sp,
+                        letterSpacing = 1.sp
                     ),
                     color = accent,
                     textAlign = TextAlign.Center,
@@ -405,7 +424,8 @@ private fun FingerprintBlock(
                             onClick = {},
                             onLongClick = { showMenu = true }
                         )
-                        .background(boxColor, shape = MaterialTheme.shapes.small)
+                        .border(1.dp, NothingBorder, RoundedCornerShape(8.dp))
+                        .background(boxColor, shape = RoundedCornerShape(8.dp))
                         .padding(16.dp),
                 )
                 DropdownMenu(
@@ -413,7 +433,7 @@ private fun FingerprintBlock(
                     onDismissRequest = { showMenu = false }
                 ) {
                     DropdownMenuItem(
-                        text = { Text(text = stringResource(R.string.fingerprint_copy)) },
+                        text = { Text(text = stringResource(R.string.fingerprint_copy), fontFamily = SpaceMonoFamily, fontSize = 12.sp) },
                         onClick = {
                             clipboardManager.setText(AnnotatedString(fingerprint))
                             showMenu = false
@@ -424,8 +444,8 @@ private fun FingerprintBlock(
         } else {
             Text(
                 text = stringResource(R.string.fingerprint_pending),
-                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = InceptionFontFamily),
-                color = Color(0xFFFF9500),
+                style = MaterialTheme.typography.bodyMedium.copy(fontFamily = SpaceMonoFamily, fontSize = 12.sp),
+                color = NothingStatusAmber,
                 modifier = Modifier.padding(16.dp)
             )
         }

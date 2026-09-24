@@ -8,6 +8,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -66,28 +67,21 @@ fun EmergencySosBanner(
             modifier = Modifier
                 .fillMaxWidth()
                 .wrapContentHeight()
-                .padding(horizontal = 10.dp, vertical = 4.dp)
-                .clip(RoundedCornerShape(12.dp))
+                .padding(horizontal = 12.dp, vertical = 6.dp)
+                .clip(RoundedCornerShape(8.dp))
                 .border(
                     width = 1.dp,
-                    color = Color(0xFFE53935).copy(alpha = pulseAlpha),
-                    shape = RoundedCornerShape(12.dp)
+                    color = com.inception.android.ui.theme.NothingRed.copy(alpha = pulseAlpha),
+                    shape = RoundedCornerShape(8.dp)
                 )
-                .background(
-                    Brush.verticalGradient(
-                        colors = listOf(
-                            Color(0xFF320A0A),
-                            Color(0xFF1E0606)
-                        )
-                    )
-                )
-                .padding(horizontal = 10.dp, vertical = 7.dp)
+                .background(com.inception.android.ui.theme.NothingSurface)
+                .padding(horizontal = 12.dp, vertical = 8.dp)
         ) {
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
                     .wrapContentHeight(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 // Main Row: Beacon Dot + Title + Status Badge + Battery + Action Button
                 Row(
@@ -101,44 +95,49 @@ fun EmergencySosBanner(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.weight(1f, fill = false)
                     ) {
-                        // Pulsing red beacon dot
+                        // Pulsing red beacon dot (Nothing signature red)
                         Box(
                             modifier = Modifier
-                                .size(10.dp)
+                                .size(8.dp)
                                 .clip(CircleShape)
-                                .background(Color(0xFFFF3B30).copy(alpha = pulseAlpha)),
+                                .background(com.inception.android.ui.theme.NothingRed.copy(alpha = pulseAlpha)),
                             contentAlignment = Alignment.Center
                         ) {
                             Box(
                                 modifier = Modifier
-                                    .size(5.dp)
+                                    .size(3.dp)
                                     .clip(CircleShape)
                                     .background(Color.White)
                             )
                         }
 
-                        // Title
+                        // Title in Space Mono
                         Text(
-                            text = if (isSelf) "SOS ACTIVE" else "SOS: ${primaryAlert.senderNickname}",
-                            color = Color(0xFFFFD2D2),
-                            fontSize = 12.sp,
+                            text = if (isSelf) "SOS ACTIVE" else "SOS: ${primaryAlert.senderNickname.uppercase()}",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            color = com.inception.android.ui.theme.NothingRed,
+                            fontSize = 11.sp,
                             fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
 
-                        // Status Badge
+                        // Status Badge in technical bracket
                         Box(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(4.dp))
-                                .background(Color(0xFFE53935))
+                                .border(1.dp, com.inception.android.ui.theme.NothingRed.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                .background(com.inception.android.ui.theme.NothingBlack)
                                 .padding(horizontal = 5.dp, vertical = 1.dp)
                         ) {
                             Text(
-                                text = primaryAlert.payload.status.displayName.uppercase(),
-                                color = Color.White,
+                                text = "[${primaryAlert.payload.status.displayName.uppercase()}]",
+                                fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                color = com.inception.android.ui.theme.NothingTextPrimary,
                                 fontSize = 9.sp,
-                                fontWeight = FontWeight.ExtraBold
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
                             )
                         }
 
@@ -149,19 +148,15 @@ fun EmergencySosBanner(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0x33FFFFFF))
+                                    .border(1.dp, Color(0xFF222222), RoundedCornerShape(4.dp))
+                                    .background(com.inception.android.ui.theme.NothingBlack)
                                     .padding(horizontal = 4.dp, vertical = 1.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.BatteryAlert,
-                                    contentDescription = null,
-                                    tint = if (primaryAlert.payload.batteryPct <= 15) Color(0xFFFF5252) else Color(0xFFFFD54F),
-                                    modifier = Modifier.size(11.dp)
-                                )
                                 Text(
-                                    text = "${primaryAlert.payload.batteryPct}%",
-                                    color = Color(0xFFEEEEEE),
-                                    fontSize = 10.sp,
+                                    text = "BAT:${primaryAlert.payload.batteryPct}%",
+                                    fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                    color = if (primaryAlert.payload.batteryPct <= 15) com.inception.android.ui.theme.NothingRed else com.inception.android.ui.theme.NothingTextSecondary,
+                                    fontSize = 9.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
@@ -174,49 +169,39 @@ fun EmergencySosBanner(
                                 horizontalArrangement = Arrangement.spacedBy(2.dp),
                                 modifier = Modifier
                                     .clip(RoundedCornerShape(4.dp))
-                                    .background(Color(0x33FFFFFF))
+                                    .border(1.dp, Color(0xFF222222), RoundedCornerShape(4.dp))
+                                    .background(com.inception.android.ui.theme.NothingBlack)
                                     .padding(horizontal = 4.dp, vertical = 1.dp)
                             ) {
-                                Icon(
-                                    imageVector = Icons.Filled.LocationOn,
-                                    contentDescription = null,
-                                    tint = Color(0xFF64B5F6),
-                                    modifier = Modifier.size(11.dp)
-                                )
                                 Text(
-                                    text = primaryAlert.payload.geohash,
-                                    color = Color(0xFFEEEEEE),
-                                    fontSize = 10.sp,
+                                    text = "#${primaryAlert.payload.geohash}",
+                                    fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                    color = com.inception.android.ui.theme.NothingTextSecondary,
+                                    fontSize = 9.sp,
                                     fontWeight = FontWeight.Medium
                                 )
                             }
                         }
                     }
 
-                    // Right action: "I AM SAFE" button or dismiss
+                    // Right action: "I AM SAFE" technical button or dismiss
                     if (isSelf) {
-                        Button(
-                            onClick = onCancelMySos,
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color(0xFF2E7D32),
-                                contentColor = Color.White
-                            ),
-                            shape = RoundedCornerShape(6.dp),
-                            contentPadding = PaddingValues(horizontal = 8.dp, vertical = 2.dp),
+                        Box(
                             modifier = Modifier
-                                .height(26.dp)
-                                .padding(start = 6.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                                .border(1.dp, com.inception.android.ui.theme.NothingStatusGreen, RoundedCornerShape(4.dp))
+                                .background(com.inception.android.ui.theme.NothingBlack)
+                                .clickable { onCancelMySos() }
+                                .padding(horizontal = 8.dp, vertical = 4.dp),
+                            contentAlignment = Alignment.Center
                         ) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = null,
-                                modifier = Modifier.size(12.dp)
-                            )
-                            Spacer(modifier = Modifier.width(3.dp))
                             Text(
-                                text = "I AM SAFE",
+                                text = "[I AM SAFE]",
+                                fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                color = com.inception.android.ui.theme.NothingStatusGreen,
                                 fontSize = 10.sp,
-                                fontWeight = FontWeight.Bold
+                                fontWeight = FontWeight.Bold,
+                                letterSpacing = 0.5.sp
                             )
                         }
                     } else {
@@ -229,8 +214,8 @@ fun EmergencySosBanner(
                             Icon(
                                 imageVector = Icons.Filled.Close,
                                 contentDescription = "Dismiss",
-                                tint = Color(0xFFFFA4A4),
-                                modifier = Modifier.size(16.dp)
+                                tint = com.inception.android.ui.theme.NothingTextSecondary,
+                                modifier = Modifier.size(14.dp)
                             )
                         }
                     }
@@ -239,13 +224,14 @@ fun EmergencySosBanner(
                 // Note subline (only shown if user entered non-blank details)
                 if (primaryAlert.payload.note.isNotBlank()) {
                     Text(
-                        text = "“${primaryAlert.payload.note}”",
-                        color = Color(0xFFFFDADA),
+                        text = "// ${primaryAlert.payload.note}",
+                        fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                        color = com.inception.android.ui.theme.NothingTextSecondary,
                         fontSize = 11.sp,
                         fontWeight = FontWeight.Normal,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.padding(start = 16.dp)
+                        modifier = Modifier.padding(start = 14.dp)
                     )
                 }
             }

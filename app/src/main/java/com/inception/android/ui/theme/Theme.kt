@@ -12,6 +12,8 @@ import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.LocalView
 import androidx.core.view.WindowCompat
 
+import androidx.compose.runtime.CompositionLocalProvider
+
 private val DarkColorScheme = darkColorScheme(
     primary = InceptionGreen,
     onPrimary = Color.Black,
@@ -24,33 +26,36 @@ private val DarkColorScheme = darkColorScheme(
     tertiary = InceptionOrange,
     onTertiary = Color.Black,
     background = DarkBackground,
-    onBackground = Color(0xFFF5F5F5),
+    onBackground = NothingTextDisplay,
     surface = DarkSurface,
-    onSurface = Color(0xFFF5F5F5),
+    onSurface = NothingTextPrimary,
     surfaceVariant = DarkSurfaceVariant,
-    onSurfaceVariant = Color(0xFF9AA69A),
+    onSurfaceVariant = NothingTextSecondary,
     outline = DarkOutline,
+    outlineVariant = NothingBorderSubtle,
     error = InceptionRed,
-    onError = Color.Black
+    onError = Color.White
 )
 
 private val LightColorScheme = lightColorScheme(
-    primary = Color(0xFF248A3D),
+    primary = Color(0xFF111111),
     onPrimary = Color.White,
-    primaryContainer = Color(0xFFD5F1D8),
-    onPrimaryContainer = Color(0xFF0A3212),
-    secondary = Color(0xFF007AFF),
+    primaryContainer = Color(0xFFE2E2E0),
+    onPrimaryContainer = Color(0xFF111111),
+    secondary = Color(0xFF666666),
     onSecondary = Color.White,
-    secondaryContainer = Color(0xFFD6E9FF),
-    onSecondaryContainer = Color(0xFF002C5C),
+    secondaryContainer = Color(0xFFEBEBE9),
+    onSecondaryContainer = Color(0xFF111111),
     tertiary = InceptionOrange,
     onTertiary = Color.Black,
     background = LightBackground,
-    onBackground = Color(0xFF131A13),
-    surface = LightSurface,
-    onSurface = Color(0xFF131A13),
+    onBackground = Color(0xFF111111),
+    surface = Color(0xFFFFFFFF),
+    onSurface = Color(0xFF111111),
     surfaceVariant = LightSurfaceVariant,
+    onSurfaceVariant = Color(0xFF666666),
     outline = LightOutline,
+    outlineVariant = Color(0xFFE0E0DE),
     error = InceptionRed,
     onError = Color.White
 )
@@ -61,6 +66,7 @@ fun InceptionTheme(
     content: @Composable () -> Unit
 ) {
     val colorScheme = if (darkTheme) DarkColorScheme else LightColorScheme
+    val inceptionPalette = if (darkTheme) DarkInceptionPalette else LightInceptionPalette
     val view = LocalView.current
     if (!view.isInEditMode) {
         SideEffect {
@@ -72,9 +78,11 @@ fun InceptionTheme(
         }
     }
 
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography,
-        content = content
-    )
+    CompositionLocalProvider(LocalInceptionPalette provides inceptionPalette) {
+        MaterialTheme(
+            colorScheme = colorScheme,
+            typography = Typography,
+            content = content
+        )
+    }
 }

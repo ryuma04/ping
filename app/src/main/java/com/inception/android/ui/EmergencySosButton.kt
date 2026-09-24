@@ -159,10 +159,10 @@ fun EmergencySosButton(
             CircularProgressIndicator(
                 progress = { holdProgress },
                 modifier = Modifier.size(36.dp),
-                color = Color(0xFFFF3B30),
-                trackColor = Color(0x33FF3B30),
-                strokeWidth = 3.dp,
-                strokeCap = StrokeCap.Round
+                color = com.inception.android.ui.theme.NothingRed,
+                trackColor = com.inception.android.ui.theme.NothingBorder,
+                strokeWidth = 2.dp,
+                strokeCap = StrokeCap.Square
             )
         }
 
@@ -173,17 +173,16 @@ fun EmergencySosButton(
                 .clip(CircleShape)
                 .background(
                     when {
-                        isSosActive -> Color(0xFFD32F2F).copy(alpha = activeGlowAlpha)
-                        isPressed -> Color(0xFF6B1D1D)
-                        else -> Color(0xFF2C1515)
+                        isSosActive -> com.inception.android.ui.theme.NothingRed.copy(alpha = activeGlowAlpha)
+                        isPressed -> com.inception.android.ui.theme.NothingRed
+                        else -> Color(0xFF141414)
                     }
                 )
                 .border(
                     width = 1.dp,
                     color = when {
-                        isSosActive -> Color(0xFFFF5252)
-                        isPressed -> Color(0xFFFF3B30)
-                        else -> Color(0xFF8C3030)
+                        isSosActive || isPressed -> com.inception.android.ui.theme.NothingRed
+                        else -> Color(0xFF2A2A2A)
                     },
                     shape = CircleShape
                 ),
@@ -191,9 +190,10 @@ fun EmergencySosButton(
         ) {
             Text(
                 text = "SOS",
-                color = if (isSosActive || isPressed) Color.White else Color(0xFFFF8A80),
+                fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                color = if (isSosActive || isPressed) Color.White else com.inception.android.ui.theme.NothingTextSecondary,
                 fontSize = 10.sp,
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Bold,
                 letterSpacing = 0.5.sp
             )
         }

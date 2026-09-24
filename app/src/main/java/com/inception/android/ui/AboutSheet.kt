@@ -16,6 +16,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Bluetooth
 import androidx.compose.material.icons.filled.Security
 import androidx.compose.material.icons.filled.Speed
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -82,8 +83,11 @@ import com.inception.android.ui.theme.LocalInceptionPalette
 import com.inception.android.util.ShareableApkVariant
 import com.inception.android.util.UniversalApkManager
 
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+
 /**
- * Theme selection chip with Apple-like styling
+ * Theme selection chip with Nothing technical styling
  */
 @Composable
 private fun ThemeChip(
@@ -94,15 +98,13 @@ private fun ThemeChip(
 ) {
     val colorScheme = MaterialTheme.colorScheme
 
-    // Cross-fade the chip so switching theme does not read as two separate flashes (the chip
-    // recolouring plus the whole app recolouring underneath it).
     val containerColor by animateColorAsState(
         targetValue = if (selected) colorScheme.primary else colorScheme.surfaceVariant,
         animationSpec = tween(InceptionMotion.STANDARD_MS, easing = FastOutSlowInEasing),
         label = "themeChipContainer"
     )
     val labelColor by animateColorAsState(
-        targetValue = if (selected) Color.White else colorScheme.onSurfaceVariant,
+        targetValue = if (selected) colorScheme.onPrimary else colorScheme.onSurfaceVariant,
         animationSpec = tween(InceptionMotion.STANDARD_MS, easing = FastOutSlowInEasing),
         label = "themeChipLabel"
     )
@@ -110,7 +112,8 @@ private fun ThemeChip(
     Surface(
         modifier = modifier,
         onClick = onClick,
-        shape = RoundedCornerShape(10.dp),
+        shape = RoundedCornerShape(8.dp),
+        border = BorderStroke(1.dp, if (selected) colorScheme.primary else colorScheme.outline),
         color = containerColor
     ) {
         Box(
@@ -120,10 +123,11 @@ private fun ThemeChip(
             contentAlignment = Alignment.Center
         ) {
             Text(
-                text = label,
-                fontFamily = InceptionFontFamily,
-                fontSize = 13.sp,
-                fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                text = label.uppercase(),
+                fontFamily = SpaceMonoFamily,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 0.5.sp,
                 color = labelColor
             )
         }

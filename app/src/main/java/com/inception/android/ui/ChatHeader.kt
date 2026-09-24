@@ -55,6 +55,15 @@ import com.inception.android.net.ArtiTorManager
 import com.inception.android.net.TorMode
 import com.inception.android.ui.theme.InceptionMotion
 import com.inception.android.ui.theme.LocalInceptionPalette
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+import com.inception.android.ui.theme.NothingSurface
+import com.inception.android.ui.theme.NothingBorderHighlight
+import com.inception.android.ui.theme.NothingTextDisplay
+import com.inception.android.ui.theme.NothingTextSecondary
+import com.inception.android.ui.theme.NothingTextTertiary
+import com.inception.android.ui.theme.NothingBlack
+import androidx.compose.foundation.border
 
 /**
  * Header components for ChatScreen
@@ -213,29 +222,10 @@ internal fun TorAwareHeaderIcon(
         1f
     }
 
-    // Fixed layout footprint = icon size. Glow is drawn larger via requiredSize so it never
-    // pushes neighbouring text when the pulse starts/stops.
     Box(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(HeaderIconSize)
     ) {
-        if (progressFade > 0.01f) {
-            val glowBrush = remember(tint) {
-                Brush.radialGradient(
-                    colorStops = arrayOf(
-                        0.0f to tint.copy(alpha = 0.55f),
-                        0.45f to tint.copy(alpha = 0.22f),
-                        1.0f to Color.Transparent,
-                    )
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .requiredSize(HeaderIconSize + 14.dp)
-                    .graphicsLayer { alpha = pulse * 0.85f * progressFade }
-                    .background(glowBrush)
-            )
-        }
         Icon(
             imageVector = imageVector,
             contentDescription = contentDescription,
@@ -284,23 +274,6 @@ internal fun TorAwareHeaderIcon(
         contentAlignment = Alignment.Center,
         modifier = modifier.size(HeaderIconSize)
     ) {
-        if (progressFade > 0.01f) {
-            val glowBrush = remember(tint) {
-                Brush.radialGradient(
-                    colorStops = arrayOf(
-                        0.0f to tint.copy(alpha = 0.55f),
-                        0.45f to tint.copy(alpha = 0.22f),
-                        1.0f to Color.Transparent,
-                    )
-                )
-            }
-            Box(
-                modifier = Modifier
-                    .requiredSize(HeaderIconSize + 14.dp)
-                    .graphicsLayer { alpha = pulse * 0.85f * progressFade }
-                    .background(glowBrush)
-            )
-        }
         Icon(
             painter = painter,
             contentDescription = contentDescription,
@@ -730,23 +703,54 @@ private fun ChannelHeader(
     if (showCancelSosConfirm) {
         AlertDialog(
             onDismissRequest = { showCancelSosConfirm = false },
-            title = { Text("Cancel Emergency SOS?", color = Color.White) },
-            text = { Text("This will broadcast a signed cancellation packet to the mesh to let all peers know you are safe.", color = Color(0xFFDDDDDD)) },
-            containerColor = Color(0xFF221717),
+            title = {
+                Text(
+                    text = "[CANCEL EMERGENCY SOS]",
+                    fontFamily = SpaceMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = NothingTextDisplay
+                )
+            },
+            text = {
+                Text(
+                    text = "This will broadcast a signed cancellation packet to the mesh to let all peers know you are safe.",
+                    fontFamily = SpaceGroteskFamily,
+                    fontSize = 13.sp,
+                    color = NothingTextSecondary
+                )
+            },
+            containerColor = NothingSurface,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.border(1.dp, NothingBorderHighlight, RoundedCornerShape(12.dp)),
             confirmButton = {
                 Button(
                     onClick = {
                         sosManager.cancelEmergencySos("User marked safe")
                         showCancelSosConfirm = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NothingTextDisplay,
+                        contentColor = NothingBlack
+                    )
                 ) {
-                    Text("I am Safe / Cancel SOS")
+                    Text(
+                        text = "[I AM SAFE / CANCEL SOS]",
+                        fontFamily = SpaceMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCancelSosConfirm = false }) {
-                    Text("Keep Active", color = Color(0xFFAAAAAA))
+                    Text(
+                        text = "[KEEP ACTIVE]",
+                        fontFamily = SpaceMonoFamily,
+                        color = NothingTextTertiary,
+                        fontSize = 11.sp
+                    )
                 }
             }
         )
@@ -865,7 +869,7 @@ private fun MainHeader(
                                 imageVector = Icons.Default.Lightbulb,
                                 contentDescription = "Lantern Emergency Guide",
                                 modifier = Modifier.size(HeaderIconSize),
-                                tint = palette.accentOrange
+                                tint = colorScheme.onSurfaceVariant
                             )
                         }
                     }
@@ -907,23 +911,54 @@ private fun MainHeader(
     if (showCancelSosConfirm) {
         AlertDialog(
             onDismissRequest = { showCancelSosConfirm = false },
-            title = { Text("Cancel Emergency SOS?", color = Color.White) },
-            text = { Text("This will broadcast a signed cancellation packet to the mesh to let all peers know you are safe.", color = Color(0xFFDDDDDD)) },
-            containerColor = Color(0xFF221717),
+            title = {
+                Text(
+                    text = "[CANCEL EMERGENCY SOS]",
+                    fontFamily = SpaceMonoFamily,
+                    fontWeight = FontWeight.Bold,
+                    fontSize = 14.sp,
+                    color = NothingTextDisplay
+                )
+            },
+            text = {
+                Text(
+                    text = "This will broadcast a signed cancellation packet to the mesh to let all peers know you are safe.",
+                    fontFamily = SpaceGroteskFamily,
+                    fontSize = 13.sp,
+                    color = NothingTextSecondary
+                )
+            },
+            containerColor = NothingSurface,
+            shape = RoundedCornerShape(12.dp),
+            modifier = Modifier.border(1.dp, NothingBorderHighlight, RoundedCornerShape(12.dp)),
             confirmButton = {
                 Button(
                     onClick = {
                         sosManager.cancelEmergencySos("User marked safe")
                         showCancelSosConfirm = false
                     },
-                    colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF2E7D32))
+                    shape = RoundedCornerShape(8.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = NothingTextDisplay,
+                        contentColor = NothingBlack
+                    )
                 ) {
-                    Text("I am Safe / Cancel SOS")
+                    Text(
+                        text = "[I AM SAFE / CANCEL SOS]",
+                        fontFamily = SpaceMonoFamily,
+                        fontWeight = FontWeight.Bold,
+                        fontSize = 11.sp
+                    )
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showCancelSosConfirm = false }) {
-                    Text("Keep Active", color = Color(0xFFAAAAAA))
+                    Text(
+                        text = "[KEEP ACTIVE]",
+                        fontFamily = SpaceMonoFamily,
+                        color = NothingTextTertiary,
+                        fontSize = 11.sp
+                    )
                 }
             }
         )

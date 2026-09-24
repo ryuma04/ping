@@ -1,9 +1,11 @@
 package com.inception.android.ui
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.Icon
@@ -46,14 +48,16 @@ internal fun PeerAvatar(
         Box(
             modifier = Modifier
                 .size(38.dp)
-                .background(color.copy(alpha = 0.16f), CircleShape),
+                .clip(CircleShape)
+                .background(Color(0xFF141414))
+                .border(1.dp, color.copy(alpha = 0.40f), CircleShape),
             contentAlignment = Alignment.Center
         ) {
             Text(
                 text = name.trim().firstOrNull()?.uppercase() ?: "#",
                 style = MaterialTheme.typography.titleMedium.copy(
-                    fontFamily = InceptionFontFamily,
-                    fontWeight = FontWeight.SemiBold
+                    fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                    fontWeight = FontWeight.Bold
                 ),
                 color = color
             )

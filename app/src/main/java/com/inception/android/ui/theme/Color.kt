@@ -2,23 +2,41 @@ package com.inception.android.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-val InceptionGreen = Color(0xFF32D74B)
-val InceptionGreenDark = Color(0xFF163D1D)
-val InceptionGreenLight = Color(0xFFB8F5C1)
+// Nothing Design System Tokens
+val NothingRed = Color(0xFFD71921)
+val NothingBlack = Color(0xFF000000)
+val NothingSurface = Color(0xFF0C0C0C)
+val NothingSurfaceVariant = Color(0xFF141414)
+val NothingBorder = Color(0xFF222222)
+val NothingBorderSubtle = Color(0xFF181818)
+val NothingBorderHighlight = Color(0xFF333333)
 
-val InceptionBlue = Color(0xFF0A84FF)
-val InceptionBlueDark = Color(0xFF082E54)
-val InceptionBlueLight = Color(0xFFC2E0FF)
+val NothingTextDisplay = Color(0xFFFFFFFF)
+val NothingTextPrimary = Color(0xFFE6E6E6)
+val NothingTextSecondary = Color(0xFF999999)
+val NothingTextTertiary = Color(0xFF555555)
 
-val InceptionOrange = Color(0xFFFF9F0A)
-val InceptionRed = Color(0xFFFF453A)
+val NothingStatusGreen = Color(0xFF22C55E)
+val NothingStatusAmber = Color(0xFFF59E0B)
 
-val DarkBackground = Color(0xFF000000)
-val DarkSurface = Color(0xFF0E150E)
-val DarkSurfaceVariant = Color(0xFF182118)
-val DarkOutline = Color(0xFF2A3A2A)
+// App Palette Mappings
+val InceptionGreen = Color(0xFFE6E6E6) // Monochrome primary
+val InceptionGreenDark = Color(0xFF1A1A1A)
+val InceptionGreenLight = Color(0xFFFFFFFF)
 
-val LightBackground = Color(0xFFFFFFFF)
-val LightSurface = Color(0xFFF2F6F2)
-val LightSurfaceVariant = Color(0xFFE7EDE7)
-val LightOutline = Color(0xFFC5D1C5)
+val InceptionBlue = Color(0xFF999999)
+val InceptionBlueDark = Color(0xFF1A1A1A)
+val InceptionBlueLight = Color(0xFFE6E6E6)
+
+val InceptionOrange = NothingStatusAmber
+val InceptionRed = NothingRed
+
+val DarkBackground = NothingBlack
+val DarkSurface = NothingSurface
+val DarkSurfaceVariant = NothingSurfaceVariant
+val DarkOutline = NothingBorder
+
+val LightBackground = Color(0xFFF5F5F3) // Warm industrial off-white
+val LightSurface = Color(0xFFEBEBE9)
+val LightSurfaceVariant = Color(0xFFE2E2E0)
+val LightOutline = Color(0xFFCCCCCC)

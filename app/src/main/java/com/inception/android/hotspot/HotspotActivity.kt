@@ -38,9 +38,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inception.android.R
 import com.inception.android.ui.theme.InceptionFontFamily
 import com.inception.android.ui.theme.InceptionTheme
-import com.inception.android.util.UniversalApkManager
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.rememberMultiplePermissionsState
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+import androidx.compose.foundation.border
+import androidx.compose.foundation.BorderStroke
+import com.inception.android.util.UniversalApkManager
 import java.io.File
 
 /**
@@ -110,8 +114,9 @@ fun HotspotScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Share Inception",
-                        fontFamily = InceptionFontFamily
+                        text = "Share Ping",
+                        fontFamily = SpaceGroteskFamily,
+                        fontWeight = FontWeight.Bold
                     )
                 },
                 navigationIcon = {
@@ -205,20 +210,24 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
         Icon(
             imageVector = Icons.Default.Wifi,
             contentDescription = null,
-            modifier = Modifier.size(80.dp),
+            modifier = Modifier.size(72.dp),
             tint = MaterialTheme.colorScheme.primary
         )
 
         Text(
-            text = "Offline App Sharing",
-            style = MaterialTheme.typography.headlineMedium,
-            fontWeight = FontWeight.Bold
+            text = "OFFLINE APP SHARING",
+            fontFamily = SpaceMonoFamily,
+            fontWeight = FontWeight.Bold,
+            fontSize = 18.sp,
+            letterSpacing = 1.sp
         )
 
         Card(
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.surfaceVariant
+                containerColor = MaterialTheme.colorScheme.surface
             )
         ) {
             Column(
@@ -226,14 +235,17 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Text(
-                    text = "How it works:",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
+                    text = "[HOW IT WORKS]",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 12.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
                 InfoItem("1. Your device creates a Wi-Fi hotspot")
                 InfoItem("2. Others connect to your hotspot")
                 InfoItem("3. They scan a QR code or enter a URL")
-                InfoItem("4. Inception downloads directly to their device")
+                InfoItem("4. Ping downloads directly to their device")
             }
         }
 
@@ -241,8 +253,10 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
         if (!permissionState.allPermissionsGranted && permissionState.shouldShowRationale) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(10.dp),
+                border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                 colors = CardDefaults.cardColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant
                 )
             ) {
                 Column(
@@ -250,22 +264,25 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     Text(
-                        text = "ℹ️ Permission Required",
-                        style = MaterialTheme.typography.titleSmall,
+                        text = "[PERMISSION REQUIRED]",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                        letterSpacing = 0.5.sp,
+                        color = MaterialTheme.colorScheme.primary
                     )
                     Text(
                         text = when {
                             Build.VERSION.SDK_INT >= HotspotPermissions.ANDROID_17_API_LEVEL ->
-                                "Inception needs nearby devices and local network access to create a Wi-Fi hotspot and serve the app to connected devices."
+                                "Ping needs nearby devices and local network access to create a Wi-Fi hotspot and serve the app to connected devices."
                             Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU ->
-                                "Inception needs nearby devices permission to create a Wi-Fi hotspot for sharing the app offline."
+                                "Ping needs nearby devices permission to create a Wi-Fi hotspot for sharing the app offline."
                             else ->
-                                "Inception needs location permission to create a Wi-Fi hotspot. This is required by Android for Wi-Fi scanning, but no location data is collected."
+                                "Ping needs location permission to create a Wi-Fi hotspot. This is required by Android for Wi-Fi scanning, but no location data is collected."
                         },
+                        fontFamily = SpaceGroteskFamily,
                         style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }
             }
@@ -273,8 +290,10 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
 
         Card(
             modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(10.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
             colors = CardDefaults.cardColors(
-                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f)
+                containerColor = MaterialTheme.colorScheme.surfaceVariant
             )
         ) {
             Column(
@@ -282,15 +301,18 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 Text(
-                    text = "⚠️ Note",
-                    style = MaterialTheme.typography.titleSmall,
+                    text = "[NOTE]",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 12.sp,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.error
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.onSurface
                 )
                 Text(
                     text = "This will create a Wi-Fi hotspot on your device. Your current Wi-Fi connection may be interrupted.",
+                    fontFamily = SpaceGroteskFamily,
                     style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.7f)
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -299,27 +321,28 @@ fun IntroScreen(onStartHotspot: () -> Unit) {
 
         Button(
             onClick = {
-                // Check permission before starting hotspot
                 if (permissionState.allPermissionsGranted) {
-                    // No permission needed or already granted
                     onStartHotspot()
                 } else {
-                    // Request permission (auto-start handled by onPermissionResult callback)
                     permissionState.launchMultiplePermissionRequest()
                 }
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .height(56.dp),
-            shape = RoundedCornerShape(16.dp)
+                .height(52.dp),
+            shape = RoundedCornerShape(8.dp),
+            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary
+            )
         ) {
             Text(
-                // Starting the hotspot is the user's action. Android will ask
-                // for the required permission only when it has not already
-                // been granted.
-                text = "Start Hotspot",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                text = "[START HOTSPOT]",
+                fontFamily = SpaceMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 13.sp,
+                letterSpacing = 0.5.sp
             )
         }
     }

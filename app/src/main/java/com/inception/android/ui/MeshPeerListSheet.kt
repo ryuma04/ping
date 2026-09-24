@@ -930,14 +930,15 @@ private fun ConversationSectionStatus(
 @Composable
 private fun ConversationGroupLabel(text: String) {
     Text(
-        text = text,
+        text = text.uppercase(),
         modifier = Modifier
             .fillMaxWidth()
             .padding(horizontal = AboutHorizontalPadding + 4.dp)
-            .padding(top = 12.dp, bottom = 6.dp),
+            .padding(top = 16.dp, bottom = 6.dp),
         style = MaterialTheme.typography.labelMedium.copy(
-            fontFamily = InceptionFontFamily,
-            fontWeight = FontWeight.SemiBold
+            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.5.sp
         ),
         color = MaterialTheme.colorScheme.onSurfaceVariant
     )

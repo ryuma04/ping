@@ -47,10 +47,10 @@ fun EmergencySosDialog(
             modifier = Modifier
                 .fillMaxWidth(0.92f)
                 .wrapContentHeight()
-                .border(1.5.dp, Color(0xFFE53935), RoundedCornerShape(20.dp)),
-            shape = RoundedCornerShape(20.dp),
-            color = Color(0xFF1E1414),
-            shadowElevation = 16.dp
+                .border(1.dp, com.inception.android.ui.theme.NothingRed, RoundedCornerShape(12.dp)),
+            shape = RoundedCornerShape(12.dp),
+            color = com.inception.android.ui.theme.NothingSurface,
+            shadowElevation = 0.dp
         ) {
             Column(
                 modifier = Modifier
@@ -58,100 +58,88 @@ fun EmergencySosDialog(
                     .padding(20.dp),
                 verticalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                // Header
+                // Header: Beacon Mark + Title
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.spacedBy(10.dp)
                 ) {
-                    Surface(
-                        shape = RoundedCornerShape(10.dp),
-                        color = Color(0xFFE53935)
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(RoundedCornerShape(6.dp))
+                            .border(1.dp, com.inception.android.ui.theme.NothingRed, RoundedCornerShape(6.dp))
+                            .background(com.inception.android.ui.theme.NothingBlack),
+                        contentAlignment = Alignment.Center
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Warning,
                             contentDescription = null,
-                            tint = Color.White,
-                            modifier = Modifier
-                                .padding(8.dp)
-                                .size(24.dp)
+                            tint = com.inception.android.ui.theme.NothingRed,
+                            modifier = Modifier.size(20.dp)
                         )
                     }
 
                     Column {
                         Text(
-                            text = "Emergency Distress Beacon",
-                            color = Color.White,
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
+                            text = "EMERGENCY DISTRESS",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            color = com.inception.android.ui.theme.NothingTextDisplay,
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Bold,
+                            letterSpacing = 0.5.sp
                         )
                         Text(
-                            text = "Floods all nearby mesh devices (TTL=7)",
-                            color = Color(0xFFAAAAAA),
-                            fontSize = 12.sp
+                            text = "// FLOODS ALL MESH NODES (TTL: 7)",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            color = com.inception.android.ui.theme.NothingTextSecondary,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.3.sp
                         )
                     }
                 }
 
                 // Telemetry summary card
                 Surface(
-                    color = Color(0xFF2A1C1C),
-                    shape = RoundedCornerShape(12.dp),
+                    color = com.inception.android.ui.theme.NothingBlack,
+                    shape = RoundedCornerShape(6.dp),
+                    border = androidx.compose.foundation.BorderStroke(1.dp, com.inception.android.ui.theme.NothingBorder),
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 14.dp, vertical = 10.dp),
+                            .padding(horizontal = 12.dp, vertical = 10.dp),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         // Battery
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.BatteryAlert,
-                                contentDescription = null,
-                                tint = if (batteryPct <= 15) Color(0xFFFF5252) else Color(0xFFFFD54F),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Battery: ${if (batteryPct >= 0) "$batteryPct%" else "N/A"}",
-                                color = Color(0xFFDDDDDD),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                        Text(
+                            text = "BAT: ${if (batteryPct >= 0) "$batteryPct%" else "N/A"}",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            color = if (batteryPct <= 15) com.inception.android.ui.theme.NothingRed else com.inception.android.ui.theme.NothingTextPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
 
                         // Geohash
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.LocationOn,
-                                contentDescription = null,
-                                tint = Color(0xFF64B5F6),
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = "Location: ${geohash ?: "Unavailable"}",
-                                color = Color(0xFFDDDDDD),
-                                fontSize = 12.sp,
-                                fontWeight = FontWeight.Medium
-                            )
-                        }
+                        Text(
+                            text = "LOC: ${geohash ?: "UNAVAILABLE"}",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            color = com.inception.android.ui.theme.NothingTextPrimary,
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
                 }
 
                 // Emergency Status Category Selector
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text(
-                        text = "EMERGENCY CATEGORY",
-                        color = Color(0xFFBBBBBB),
+                        text = "[CATEGORY]",
+                        fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                        color = com.inception.android.ui.theme.NothingTextSecondary,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
 
@@ -196,10 +184,11 @@ fun EmergencySosDialog(
                 // Optional note input
                 Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
                     Text(
-                        text = "DETAILS (OPTIONAL)",
-                        color = Color(0xFFBBBBBB),
+                        text = "[DETAILS (OPTIONAL)]",
+                        fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                        color = com.inception.android.ui.theme.NothingTextSecondary,
                         fontSize = 11.sp,
-                        fontWeight = FontWeight.SemiBold,
+                        fontWeight = FontWeight.Bold,
                         letterSpacing = 0.5.sp
                     )
 
@@ -208,22 +197,28 @@ fun EmergencySosDialog(
                         onValueChange = { if (it.length <= 120) noteText = it },
                         placeholder = {
                             Text(
-                                "e.g., Injured leg, 2 people trapped, need water...",
-                                color = Color(0xFF777777),
-                                fontSize = 13.sp
+                                "// e.g. 2 injured, trapped under debris...",
+                                fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                color = com.inception.android.ui.theme.NothingTextTertiary,
+                                fontSize = 12.sp
                             )
                         },
+                        textStyle = androidx.compose.ui.text.TextStyle(
+                            fontFamily = com.inception.android.ui.theme.SpaceGroteskFamily,
+                            color = com.inception.android.ui.theme.NothingTextPrimary,
+                            fontSize = 13.sp
+                        ),
                         modifier = Modifier.fillMaxWidth(),
                         colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Color(0xFFE53935),
-                            unfocusedBorderColor = Color(0xFF443333),
-                            focusedTextColor = Color.White,
-                            unfocusedTextColor = Color(0xFFEEEEEE),
-                            cursorColor = Color(0xFFE53935),
-                            focusedContainerColor = Color(0xFF251A1A),
-                            unfocusedContainerColor = Color(0xFF251A1A)
+                            focusedBorderColor = com.inception.android.ui.theme.NothingRed,
+                            unfocusedBorderColor = com.inception.android.ui.theme.NothingBorder,
+                            focusedTextColor = com.inception.android.ui.theme.NothingTextPrimary,
+                            unfocusedTextColor = com.inception.android.ui.theme.NothingTextPrimary,
+                            cursorColor = com.inception.android.ui.theme.NothingRed,
+                            focusedContainerColor = com.inception.android.ui.theme.NothingBlack,
+                            unfocusedContainerColor = com.inception.android.ui.theme.NothingBlack
                         ),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(6.dp),
                         maxLines = 3
                     )
                 }
@@ -236,12 +231,18 @@ fun EmergencySosDialog(
                     OutlinedButton(
                         onClick = onDismiss,
                         modifier = Modifier.weight(1f),
-                        shape = RoundedCornerShape(10.dp),
+                        shape = RoundedCornerShape(6.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, com.inception.android.ui.theme.NothingBorder),
                         colors = ButtonDefaults.outlinedButtonColors(
-                            contentColor = Color(0xFFAAAAAA)
+                            contentColor = com.inception.android.ui.theme.NothingTextSecondary
                         )
                     ) {
-                        Text("Cancel")
+                        Text(
+                            text = "[CANCEL]",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            fontSize = 12.sp,
+                            fontWeight = FontWeight.Medium
+                        )
                     }
 
                     Button(
@@ -249,23 +250,19 @@ fun EmergencySosDialog(
                             onConfirmBroadcast(selectedStatus, noteText.trim())
                             onDismiss()
                         },
-                        modifier = Modifier.weight(1.6f),
-                        shape = RoundedCornerShape(10.dp),
+                        modifier = Modifier.weight(1.5f),
+                        shape = RoundedCornerShape(6.dp),
                         colors = ButtonDefaults.buttonColors(
-                            containerColor = Color(0xFFD32F2F),
+                            containerColor = com.inception.android.ui.theme.NothingRed,
                             contentColor = Color.White
                         )
                     ) {
-                        Icon(
-                            imageVector = Icons.Filled.CellTower,
-                            contentDescription = null,
-                            modifier = Modifier.size(16.dp)
-                        )
-                        Spacer(modifier = Modifier.width(6.dp))
                         Text(
-                            text = "BROADCAST SOS",
+                            text = "[TRANSMIT SOS]",
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
                             fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp
+                            fontSize = 12.sp,
+                            letterSpacing = 0.5.sp
                         )
                     }
                 }
@@ -284,15 +281,15 @@ private fun StatusOptionChip(
 ) {
     Surface(
         modifier = modifier
-            .clip(RoundedCornerShape(10.dp))
+            .clip(RoundedCornerShape(6.dp))
             .clickable(onClick = onClick)
             .border(
-                width = if (isSelected) 1.5.dp else 1.dp,
-                color = if (isSelected) Color(0xFFE53935) else Color(0xFF443333),
-                shape = RoundedCornerShape(10.dp)
+                width = 1.dp,
+                color = if (isSelected) com.inception.android.ui.theme.NothingRed else com.inception.android.ui.theme.NothingBorder,
+                shape = RoundedCornerShape(6.dp)
             ),
-        color = if (isSelected) Color(0xFF4A1818) else Color(0xFF221717),
-        shape = RoundedCornerShape(10.dp)
+        color = if (isSelected) Color(0xFF1C0D0D) else com.inception.android.ui.theme.NothingBlack,
+        shape = RoundedCornerShape(6.dp)
     ) {
         Row(
             modifier = Modifier
@@ -304,14 +301,16 @@ private fun StatusOptionChip(
             Icon(
                 imageVector = icon,
                 contentDescription = null,
-                tint = if (isSelected) Color(0xFFFF5252) else Color(0xFFAAAAAA),
-                modifier = Modifier.size(18.dp)
+                tint = if (isSelected) com.inception.android.ui.theme.NothingRed else com.inception.android.ui.theme.NothingTextSecondary,
+                modifier = Modifier.size(16.dp)
             )
             Text(
-                text = label,
-                color = if (isSelected) Color.White else Color(0xFFCCCCCC),
-                fontSize = 13.sp,
-                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium
+                text = label.uppercase(),
+                fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                color = if (isSelected) Color.White else com.inception.android.ui.theme.NothingTextPrimary,
+                fontSize = 11.sp,
+                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Medium,
+                letterSpacing = 0.5.sp
             )
         }
     }

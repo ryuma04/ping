@@ -1,6 +1,7 @@
 package com.inception.android.lantern.ui
 
 import androidx.compose.animation.*
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -30,6 +31,11 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.inception.android.lantern.model.LanternCategory
 import com.inception.android.lantern.model.LanternChunk
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+import com.inception.android.ui.theme.NothingBorder
+import com.inception.android.ui.theme.NothingSurface
+import com.inception.android.ui.theme.NothingSurfaceVariant
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -76,15 +82,20 @@ fun LanternSheet(
                     Text(
                         text = "Lantern",
                         style = MaterialTheme.typography.titleLarge,
+                        fontFamily = SpaceGroteskFamily,
                         fontWeight = FontWeight.Bold
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     SuggestionChip(
                         onClick = { viewModel.openModelHub() },
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
                         label = {
                             Text(
-                                text = activeTier?.displayName?.substringBefore(" ") ?: "Fast FTS5",
-                                fontSize = 11.sp,
+                                text = (activeTier?.displayName?.substringBefore(" ") ?: "Fast FTS5").uppercase(),
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.5.sp,
                                 color = MaterialTheme.colorScheme.primary
                             )
                         },
@@ -123,7 +134,18 @@ fun LanternSheet(
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = { viewModel.onQueryChanged(it) },
-                placeholder = { Text("Search emergency guidance (e.g. purify water, CPR)") },
+                placeholder = {
+                    Text(
+                        "// SEARCH GUIDANCE (E.G. WATER, CPR)...",
+                        fontFamily = SpaceMonoFamily,
+                        fontSize = 11.sp,
+                        letterSpacing = 0.5.sp
+                    )
+                },
+                textStyle = MaterialTheme.typography.bodyMedium.copy(
+                    fontFamily = SpaceGroteskFamily,
+                    fontSize = 14.sp
+                ),
                 leadingIcon = {
                     Icon(Icons.Default.Search, contentDescription = null, tint = MaterialTheme.colorScheme.primary)
                 },
@@ -137,7 +159,11 @@ fun LanternSheet(
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
                 keyboardActions = KeyboardActions(onSearch = { focusManager.clearFocus() }),
                 singleLine = true,
-                shape = RoundedCornerShape(14.dp),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = MaterialTheme.colorScheme.primary,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline
+                ),
                 modifier = Modifier.fillMaxWidth()
             )
 
@@ -153,13 +179,32 @@ fun LanternSheet(
                 FilterChip(
                     selected = selectedCategory == null,
                     onClick = { viewModel.onCategorySelected(null) },
-                    label = { Text("All Protocols") }
+                    shape = RoundedCornerShape(6.dp),
+                    border = BorderStroke(1.dp, if (selectedCategory == null) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
+                    label = {
+                        Text(
+                            "[ALL PROTOCOLS]",
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp
+                        )
+                    }
                 )
                 LanternCategory.entries.forEach { category ->
+                    val isSel = selectedCategory == category
                     FilterChip(
-                        selected = selectedCategory == category,
+                        selected = isSel,
                         onClick = { viewModel.onCategorySelected(category) },
-                        label = { Text(category.displayName) }
+                        shape = RoundedCornerShape(6.dp),
+                        border = BorderStroke(1.dp, if (isSel) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline),
+                        label = {
+                            Text(
+                                "[${category.displayName.uppercase()}]",
+                                fontFamily = SpaceMonoFamily,
+                                fontSize = 10.sp,
+                                letterSpacing = 0.5.sp
+                            )
+                        }
                     )
                 }
             }
@@ -245,13 +290,13 @@ private fun GroundedSynthesisCard(
     latencyMs: Long
 ) {
     Card(
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(10.dp),
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.35f)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant
         ),
         modifier = Modifier
             .fillMaxWidth()
-            .border(1.5.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(16.dp))
+            .border(1.dp, MaterialTheme.colorScheme.primary, RoundedCornerShape(10.dp))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Row(
@@ -268,16 +313,21 @@ private fun GroundedSynthesisCard(
                     )
                     Spacer(modifier = Modifier.width(6.dp))
                     Text(
-                        text = "AI Synthesized Guidance",
+                        text = "AI SYNTHESIZED GUIDANCE",
                         style = MaterialTheme.typography.titleMedium,
+                        fontFamily = SpaceMonoFamily,
                         fontWeight = FontWeight.Bold,
+                        fontSize = 12.sp,
+                        letterSpacing = 0.5.sp,
                         color = MaterialTheme.colorScheme.primary
                     )
                 }
 
                 Text(
-                    text = "${tier?.parameterSize ?: ""} (${latencyMs}ms)",
+                    text = "${tier?.parameterSize ?: ""} [${latencyMs}MS]".uppercase(),
                     style = MaterialTheme.typography.bodySmall,
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
@@ -287,6 +337,7 @@ private fun GroundedSynthesisCard(
             Text(
                 text = responseMarkdown,
                 style = MaterialTheme.typography.bodyMedium,
+                fontFamily = SpaceGroteskFamily,
                 lineHeight = 22.sp
             )
         }
@@ -299,13 +350,14 @@ private fun ManualChunkCard(
     onClick: () -> Unit
 ) {
     Card(
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)),
+        shape = RoundedCornerShape(10.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
         modifier = Modifier
             .fillMaxWidth()
+            .border(1.dp, MaterialTheme.colorScheme.outline, RoundedCornerShape(10.dp))
             .clickable { onClick() }
     ) {
-        Column(modifier = Modifier.padding(16.dp)) {
+        Column(modifier = Modifier.padding(14.dp)) {
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -314,12 +366,16 @@ private fun ManualChunkCard(
                 Text(
                     text = chunk.title,
                     style = MaterialTheme.typography.titleMedium,
+                    fontFamily = SpaceGroteskFamily,
                     fontWeight = FontWeight.SemiBold,
                     modifier = Modifier.weight(1f)
                 )
-                AssistChip(
-                    onClick = {},
-                    label = { Text(chunk.category.displayName, fontSize = 10.sp) }
+                Text(
+                    text = "[${chunk.category.displayName.uppercase()}]",
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
+                    letterSpacing = 0.5.sp,
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
 
@@ -328,6 +384,7 @@ private fun ManualChunkCard(
             Text(
                 text = chunk.summary,
                 style = MaterialTheme.typography.bodySmall,
+                fontFamily = SpaceGroteskFamily,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
@@ -337,25 +394,30 @@ private fun ManualChunkCard(
                     chunk.steps.take(3).forEachIndexed { index, step ->
                         Row(verticalAlignment = Alignment.Top) {
                             Text(
-                                text = "${index + 1}.",
+                                text = String.format("%02d.", index + 1),
+                                fontFamily = SpaceMonoFamily,
                                 fontWeight = FontWeight.Bold,
                                 color = MaterialTheme.colorScheme.primary,
-                                fontSize = 12.sp,
-                                modifier = Modifier.width(18.dp)
+                                fontSize = 11.sp,
+                                modifier = Modifier.width(26.dp)
                             )
                             Text(
                                 text = step,
                                 style = MaterialTheme.typography.bodySmall,
+                                fontFamily = SpaceGroteskFamily,
                                 maxLines = 2
                             )
                         }
                     }
                     if (chunk.steps.size > 3) {
                         Text(
-                            text = "+ ${chunk.steps.size - 3} more steps...",
+                            text = "+ ${chunk.steps.size - 3} MORE STEPS",
                             style = MaterialTheme.typography.labelSmall,
+                            fontFamily = SpaceMonoFamily,
+                            fontSize = 10.sp,
+                            letterSpacing = 0.5.sp,
                             color = MaterialTheme.colorScheme.primary,
-                            modifier = Modifier.padding(start = 18.dp, top = 2.dp)
+                            modifier = Modifier.padding(start = 26.dp, top = 2.dp)
                         )
                     }
                 }
@@ -369,16 +431,20 @@ private fun ManualChunkCard(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "📖 ${chunk.sourceManual}",
+                    text = "[MANUAL: ${chunk.sourceManual.uppercase()}]",
                     style = MaterialTheme.typography.labelSmall,
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
                     maxLines = 1,
                     modifier = Modifier.weight(1f)
                 )
 
                 Text(
-                    text = "View Full →",
+                    text = "[VIEW FULL]",
                     style = MaterialTheme.typography.labelSmall,
+                    fontFamily = SpaceMonoFamily,
+                    fontSize = 11.sp,
                     color = MaterialTheme.colorScheme.primary,
                     fontWeight = FontWeight.Bold
                 )

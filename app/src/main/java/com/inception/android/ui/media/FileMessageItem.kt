@@ -1,5 +1,7 @@
 package com.inception.android.ui.media
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -11,6 +13,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.draw.clip
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Description
 import androidx.compose.material.icons.filled.OpenInNew
@@ -33,6 +36,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.inception.android.R
 import com.inception.android.features.file.FileUtils
 import com.inception.android.model.InceptionFilePacket
@@ -53,39 +57,40 @@ fun FileMessageItem(
         FileUtils.sanitizeFileName(packet.fileName)
     }
 
-    Card(
+    androidx.compose.material3.Surface(
         modifier = modifier
             .fillMaxWidth(0.85f)
             .clickable {
                 showDialog = true
                 onFileClick()
             },
-        shape = RoundedCornerShape(14.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.85f)
-        )
+        shape = RoundedCornerShape(8.dp),
+        border = androidx.compose.foundation.BorderStroke(1.dp, com.inception.android.ui.theme.NothingBorder),
+        color = com.inception.android.ui.theme.NothingSurface
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 12.dp),
+            modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(10.dp)
         ) {
             // MIME-specific file icon
             Icon(
                 imageVector = Icons.Filled.Description,
                 contentDescription = stringResource(R.string.cd_file),
-                tint = getFileIconColor(sanitizedFileName),
-                modifier = Modifier.size(36.dp)
+                tint = com.inception.android.ui.theme.NothingTextSecondary,
+                modifier = Modifier.size(28.dp)
             )
 
             // File metadata: sanitized name, size, type badge
             Column(
                 modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
                 Text(
                     text = sanitizedFileName,
-                    style = MaterialTheme.typography.bodyMedium,
+                    fontFamily = com.inception.android.ui.theme.SpaceGroteskFamily,
+                    color = com.inception.android.ui.theme.NothingTextPrimary,
+                    fontSize = 13.sp,
                     fontWeight = FontWeight.SemiBold,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -97,8 +102,9 @@ fun FileMessageItem(
                 ) {
                     Text(
                         text = FileUtils.formatFileSize(packet.fileSize),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                        fontSize = 10.sp,
+                        color = com.inception.android.ui.theme.NothingTextTertiary
                     )
 
                     FileTypeBadge(mimeType = packet.mimeType, fileName = sanitizedFileName)
@@ -106,28 +112,25 @@ fun FileMessageItem(
             }
 
             // Explicit Open action button
-            FilledTonalButton(
-                onClick = {
-                    showDialog = true
-                    onFileClick()
-                },
-                shape = RoundedCornerShape(8.dp),
-                contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 10.dp, vertical = 4.dp),
-                colors = ButtonDefaults.filledTonalButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            Box(
+                modifier = Modifier
+                    .clip(RoundedCornerShape(4.dp))
+                    .border(1.dp, com.inception.android.ui.theme.NothingBorderHighlight, RoundedCornerShape(4.dp))
+                    .background(com.inception.android.ui.theme.NothingBlack)
+                    .clickable {
+                        showDialog = true
+                        onFileClick()
+                    }
+                    .padding(horizontal = 8.dp, vertical = 4.dp),
+                contentAlignment = Alignment.Center
             ) {
-                Icon(
-                    imageVector = Icons.Filled.OpenInNew,
-                    contentDescription = null,
-                    modifier = Modifier.size(14.dp)
-                )
-                Spacer(Modifier.width(4.dp))
                 Text(
-                    text = stringResource(R.string.file_viewer_open),
-                    style = MaterialTheme.typography.labelMedium,
-                    fontWeight = FontWeight.Medium
+                    text = "[OPEN]",
+                    fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                    color = com.inception.android.ui.theme.NothingTextPrimary,
+                    fontSize = 10.sp,
+                    fontWeight = FontWeight.Bold,
+                    letterSpacing = 0.5.sp
                 )
             }
         }
@@ -144,31 +147,42 @@ fun FileMessageItem(
 }
 
 /**
- * Small badge showing file type
+ * Small badge showing file type in Nothing Space Mono style
  */
 @Composable
 private fun FileTypeBadge(mimeType: String, fileName: String = "") {
     val ext = fileName.substringAfterLast(".", "").lowercase()
-    val (text, color) = when {
-        mimeType.startsWith("application/pdf") || ext == "pdf" -> "PDF" to Color(0xFFDC2626)
-        ext == "docx" || ext == "doc" || mimeType.contains("wordprocessingml") -> "DOC" to Color(0xFF1D4ED8)
-        ext == "xlsx" || ext == "xls" || mimeType.contains("spreadsheetml") -> "XLS" to Color(0xFF059669)
-        ext == "csv" || mimeType == "text/csv" -> "CSV" to Color(0xFF0D9488)
-        ext == "md" || mimeType == "text/markdown" -> "MD" to Color(0xFF4F46E5)
-        mimeType.startsWith("text/") || ext == "txt" -> "TXT" to Color(0xFF059669)
-        mimeType.startsWith("image/") -> "IMG" to Color(0xFF7C3AED)
-        mimeType.startsWith("audio/") -> "AUD" to Color(0xFFEA580C)
-        mimeType.startsWith("video/") -> "VID" to Color(0xFF2563EB)
-        mimeType.contains("zip") || mimeType.contains("rar") || ext in listOf("zip", "rar", "7z", "tar", "gz") -> "ZIP" to Color(0xFF7C2D12)
-        else -> "FILE" to MaterialTheme.colorScheme.onSurfaceVariant
+    val text = when {
+        mimeType.startsWith("application/pdf") || ext == "pdf" -> "PDF"
+        ext == "docx" || ext == "doc" || mimeType.contains("wordprocessingml") -> "DOC"
+        ext == "xlsx" || ext == "xls" || mimeType.contains("spreadsheetml") -> "XLS"
+        ext == "csv" || mimeType == "text/csv" -> "CSV"
+        ext == "md" || mimeType == "text/markdown" -> "MD"
+        mimeType.startsWith("text/") || ext == "txt" -> "TXT"
+        mimeType.startsWith("image/") -> "IMG"
+        mimeType.startsWith("audio/") -> "AUD"
+        mimeType.startsWith("video/") -> "VID"
+        mimeType.contains("zip") || mimeType.contains("rar") || ext in listOf("zip", "rar", "7z", "tar", "gz") -> "ZIP"
+        ext == "apk" -> "APK"
+        else -> "FILE"
     }
 
-    Text(
-        text = text,
-        style = MaterialTheme.typography.labelSmall,
-        color = color,
-        fontWeight = FontWeight.Bold
-    )
+    Box(
+        modifier = Modifier
+            .clip(RoundedCornerShape(3.dp))
+            .border(1.dp, Color(0xFF262626), RoundedCornerShape(3.dp))
+            .background(Color(0xFF141414))
+            .padding(horizontal = 4.dp, vertical = 1.dp)
+    ) {
+        Text(
+            text = text,
+            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+            color = com.inception.android.ui.theme.NothingTextSecondary,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 0.3.sp
+        )
+    }
 }
 
 /**

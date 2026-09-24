@@ -79,6 +79,9 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
+import androidx.compose.foundation.BorderStroke
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
 
 /**
  * Leading column width matching settings rows: 22.dp glyph + 16.dp gutter before title text.
@@ -245,7 +248,8 @@ fun LocationChannelsSheet(
                                     .padding(horizontal = AboutHorizontalPadding)
                                     .padding(top = 10.dp),
                                 color = colorScheme.surface,
-                                shape = AboutCardShape
+                                shape = AboutCardShape,
+                                border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.2f))
                             ) {
                                 ChannelOptionRow(
                                     title = meshTitleWithCount(viewModel),
@@ -295,7 +299,8 @@ fun LocationChannelsSheet(
                                         .fillMaxWidth()
                                         .padding(horizontal = AboutHorizontalPadding),
                                     color = colorScheme.surface,
-                                    shape = AboutCardShape
+                                    shape = AboutCardShape,
+                                    border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.2f))
                                 ) {
                                     ChannelOptionRow(
                                         title = geohashHashTitleWithCount(
@@ -334,7 +339,8 @@ fun LocationChannelsSheet(
                                         .fillMaxWidth()
                                         .padding(horizontal = AboutHorizontalPadding),
                                     color = colorScheme.surface,
-                                    shape = AboutCardShape
+                                    shape = AboutCardShape,
+                                    border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.2f))
                                 ) {
                                     Column {
                                         bookmarks.forEachIndexed { index, gh ->
@@ -445,7 +451,8 @@ fun LocationChannelsSheet(
                                     .fillMaxWidth()
                                     .padding(horizontal = AboutHorizontalPadding),
                                 color = colorScheme.surface,
-                                shape = AboutCardShape
+                                shape = AboutCardShape,
+                                border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.2f))
                             ) {
                                 Column {
                                     if (locationServicesEnabled) {
@@ -555,7 +562,8 @@ fun LocationChannelsSheet(
                                 .padding(horizontal = AboutHorizontalPadding)
                                 .padding(top = 10.dp),
                             color = colorScheme.surface,
-                            shape = AboutCardShape
+                            shape = AboutCardShape,
+                            border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.2f))
                         ) {
                             ChannelOptionRow(
                                 title = stringResource(R.string.cd_location_notes),
@@ -597,7 +605,8 @@ fun LocationChannelsSheet(
                                     .fillMaxWidth()
                                     .padding(horizontal = AboutHorizontalPadding),
                                 color = colorScheme.surface,
-                                shape = AboutCardShape
+                                shape = AboutCardShape,
+                                border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.2f))
                             ) {
                                 ChannelSettingsToggleRow(
                                     icon = Icons.Filled.Security,
@@ -928,7 +937,7 @@ private fun CustomGeohashRow(
         Text(
             text = stringResource(R.string.hash_symbol),
             fontSize = 14.sp,
-            fontFamily = InceptionFontFamily,
+            fontFamily = SpaceMonoFamily,
             color = palette.textTertiary
         )
 
@@ -939,7 +948,7 @@ private fun CustomGeohashRow(
             onValueChange = onGeohashChange,
             textStyle = TextStyle(
                 fontSize = 14.sp,
-                fontFamily = InceptionFontFamily,
+                fontFamily = SpaceMonoFamily,
                 color = colorScheme.primary
             ),
             cursorBrush = SolidColor(colorScheme.primary),
@@ -949,9 +958,6 @@ private fun CustomGeohashRow(
                 .onFocusChanged { focusState ->
                     if (!focusState.isFocused) return@onFocusChanged
                     onFocusGained()
-                    // Wait until IME insets have landed so the LazyColumn has shrunk; bringIntoView
-                    // against the full-height viewport leaves the field tucked under the keyboard.
-                    // Re-request once the IME animation settles — early insets are still growing.
                     coroutineScope.launch {
                         withTimeoutOrNull(750) {
                             snapshotFlow { imeInsets.getBottom(density) }
@@ -967,7 +973,7 @@ private fun CustomGeohashRow(
                     Text(
                         text = stringResource(R.string.geohash_placeholder),
                         fontSize = 14.sp,
-                        fontFamily = InceptionFontFamily,
+                        fontFamily = SpaceMonoFamily,
                         color = palette.textTertiary
                     )
                 }
@@ -995,6 +1001,7 @@ private fun CustomGeohashRow(
             enabled = isValid,
             shape = RoundedCornerShape(8.dp),
             color = teleportContainer,
+            border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.25f)),
             interactionSource = teleportInteraction,
             modifier = Modifier.scale(teleportScale)
         ) {
@@ -1002,8 +1009,8 @@ private fun CustomGeohashRow(
                 text = stringResource(R.string.teleport).uppercase(),
                 fontSize = 11.sp,
                 letterSpacing = 0.8.sp,
-                fontWeight = FontWeight.Medium,
-                fontFamily = InceptionFontFamily,
+                fontWeight = FontWeight.Bold,
+                fontFamily = SpaceMonoFamily,
                 color = teleportColor,
                 modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp)
             )

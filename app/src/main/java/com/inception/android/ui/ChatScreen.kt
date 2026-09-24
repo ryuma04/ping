@@ -17,6 +17,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.drawBehind
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.Alignment
@@ -28,6 +30,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.Dp
@@ -47,6 +50,8 @@ import com.inception.android.nostr.LocationNotesManager
 import com.inception.android.nostr.NearbyNotesController
 import com.inception.android.ui.media.FullScreenImageViewer
 import com.inception.android.ui.theme.InceptionMotion
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
 
 /**
  * Main ChatScreen - REFACTORED to use component-based architecture
@@ -501,8 +506,6 @@ fun ChatScreen(viewModel: ChatViewModel) {
             Surface(
                 shape = CircleShape,
                 color = colorScheme.surface,
-                tonalElevation = 3.dp,
-                shadowElevation = 6.dp,
                 border = BorderStroke(1.dp, colorScheme.primary)
             ) {
                 IconButton(onClick = { forceScrollToBottom = !forceScrollToBottom }) {
@@ -633,33 +636,39 @@ private fun NearbyNotesStrip(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    val colorScheme = MaterialTheme.colorScheme
     Surface(
         onClick = onClick,
         modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.45f),
+        color = colorScheme.surface,
+        border = BorderStroke(1.dp, colorScheme.outlineVariant)
     ) {
         Row(
             modifier = Modifier
                 .fillMaxWidth()
-                .heightIn(min = 48.dp)
-                .padding(horizontal = 12.dp, vertical = 7.dp),
+                .heightIn(min = 42.dp)
+                .padding(horizontal = 14.dp, vertical = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Text(
-                text = "📍 " + if (noteCount == 1) {
-                    stringResource(R.string.nearby_notes_one)
+                text = if (noteCount == 1) {
+                    "[GEO NOTE: 1 NEARBY]"
                 } else {
-                    stringResource(R.string.nearby_notes_many, noteCount)
+                    "[GEO NOTES: $noteCount NEARBY]"
                 },
                 modifier = Modifier.weight(1f),
-                color = MaterialTheme.colorScheme.primary,
-                fontFamily = InceptionFontFamily,
-                fontSize = 12.sp,
+                color = colorScheme.primary,
+                fontFamily = SpaceMonoFamily,
+                fontWeight = FontWeight.Bold,
+                fontSize = 11.sp,
+                letterSpacing = 0.8.sp,
             )
             Text(
-                text = "›",
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 18.sp,
+                text = "[VIEW]",
+                color = colorScheme.onSurfaceVariant,
+                fontFamily = SpaceMonoFamily,
+                fontSize = 11.sp,
+                letterSpacing = 0.5.sp,
             )
         }
     }
@@ -820,13 +829,15 @@ private fun ChatFloatingHeader(
         Box(
             modifier = Modifier
                 .fillMaxWidth()
-                .background(
-                    Brush.verticalGradient(
-                        0f to colorScheme.background,
-                        HeaderOpaqueStop to colorScheme.background,
-                        1f to colorScheme.background.copy(alpha = BarBackgroundAlpha)
+                .background(colorScheme.background)
+                .drawBehind {
+                    drawLine(
+                        color = Color(0xFF1F1F1F),
+                        start = Offset(0f, size.height),
+                        end = Offset(size.width, size.height),
+                        strokeWidth = 1.dp.toPx()
                     )
-                )
+                }
         ) {
             ChatHeaderContent(
                 selectedPrivatePeer = selectedPrivatePeer,

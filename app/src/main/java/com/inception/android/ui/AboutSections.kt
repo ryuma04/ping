@@ -54,11 +54,16 @@ import com.inception.android.ui.theme.LocalInceptionPalette
  * preferences, whereas these are pure presentation.
  */
 
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.DotoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
+import androidx.compose.foundation.border
+
 /** Horizontal inset shared by every About section, so cards and labels align to one grid. */
 internal val AboutHorizontalPadding = 20.dp
 
-/** Card corner radius for grouped rows. */
-internal val AboutCardShape = RoundedCornerShape(16.dp)
+/** Card corner radius for grouped rows (Nothing 8-12px standard). */
+internal val AboutCardShape = RoundedCornerShape(12.dp)
 
 /** Leading icon column in settings-style sheet rows. */
 internal val SheetRowLeadingSlot = 22.dp
@@ -89,8 +94,7 @@ enum class AboutTab {
 /**
  * Small uppercase section label, e.g. `SETTINGS`.
  *
- * Uppercasing happens here rather than in the string resource so translators supply natural
- * sentence case and locales without a case distinction are unaffected.
+ * Nothing standard: Space Mono ALL CAPS with generous letter spacing.
  */
 @Composable
 internal fun AboutSectionLabel(
@@ -100,10 +104,10 @@ internal fun AboutSectionLabel(
     val palette = LocalInceptionPalette.current
     Text(
         text = text.uppercase(),
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceMonoFamily,
         fontSize = 11.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.8.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.sp,
         color = palette.textTertiary,
         modifier = modifier.padding(start = AboutHorizontalPadding, top = 24.dp, bottom = 8.dp)
     )
@@ -140,7 +144,7 @@ internal fun SheetIconSectionHeader(
             Text(
                 text = title,
                 fontSize = 17.sp,
-                fontFamily = InceptionFontFamily,
+                fontFamily = SpaceGroteskFamily,
                 fontWeight = FontWeight.SemiBold,
                 color = colorScheme.primary
             )
@@ -148,9 +152,9 @@ internal fun SheetIconSectionHeader(
         if (!subtitle.isNullOrBlank()) {
             Text(
                 text = subtitle,
-                fontSize = 12.sp,
-                lineHeight = 17.sp,
-                fontFamily = InceptionFontFamily,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
+                fontFamily = SpaceMonoFamily,
                 color = colorScheme.onSurfaceVariant
             )
         }
@@ -196,11 +200,9 @@ internal fun AboutHero(
 
         Text(
             text = stringResource(R.string.app_name),
-            fontFamily = InceptionFontFamily,
+            fontFamily = SpaceGroteskFamily,
             fontWeight = FontWeight.Bold,
             fontSize = 40.sp,
-            // Monospace at display size leaves too much air between glyphs; pull it in slightly
-            // so the wordmark reads as a single unit.
             letterSpacing = (-0.5).sp,
             color = colorScheme.primary
         )
@@ -209,17 +211,18 @@ internal fun AboutHero(
 
         Text(
             text = stringResource(R.string.about_tagline),
-            fontFamily = InceptionFontFamily,
-            fontSize = 16.sp,
+            fontFamily = SpaceGroteskFamily,
+            fontSize = 15.sp,
             color = colorScheme.onSurfaceVariant
         )
 
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = stringResource(R.string.version_prefix, versionName),
-            fontFamily = InceptionFontFamily,
-            fontSize = 12.sp,
+            text = stringResource(R.string.version_prefix, versionName).uppercase(),
+            fontFamily = SpaceMonoFamily,
+            fontSize = 11.sp,
+            letterSpacing = 0.5.sp,
             color = palette.textTertiary
         )
     }
@@ -309,10 +312,10 @@ private fun AboutTabLabel(
     ) {
         Text(
             text = text.uppercase(),
-            fontFamily = InceptionFontFamily,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 0.8.sp,
+            fontFamily = SpaceMonoFamily,
+            fontSize = 12.sp,
+            fontWeight = FontWeight.Bold,
+            letterSpacing = 1.sp,
             color = color
         )
     }
@@ -468,7 +471,7 @@ private fun AboutFeatureRow(
         Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
             Text(
                 text = title,
-                fontFamily = InceptionFontFamily,
+                fontFamily = SpaceGroteskFamily,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 lineHeight = 20.sp,
@@ -476,9 +479,9 @@ private fun AboutFeatureRow(
             )
             Text(
                 text = subtitle,
-                fontFamily = InceptionFontFamily,
-                fontSize = 12.sp,
-                lineHeight = 17.sp,
+                fontFamily = SpaceMonoFamily,
+                fontSize = 11.sp,
+                lineHeight = 16.sp,
                 color = colorScheme.onSurfaceVariant
             )
         }
@@ -496,16 +499,18 @@ internal fun InceptionBadge(
     val colorScheme = MaterialTheme.colorScheme
     Box(
         modifier = modifier
-            .background(colorScheme.primary.copy(alpha = 0.15f), RoundedCornerShape(4.dp))
-            .padding(horizontal = 5.dp, vertical = 2.dp)
+            .background(colorScheme.surfaceVariant, RoundedCornerShape(4.dp))
+            .border(BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.3f)), RoundedCornerShape(4.dp))
+            .padding(horizontal = 6.dp, vertical = 2.dp)
     ) {
         Text(
             text = text.uppercase(),
-            fontFamily = InceptionFontFamily,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Bold,
+            fontFamily = SpaceMonoFamily,
+            fontSize = 9.sp,
+            fontWeight = FontWeight.Normal,
             letterSpacing = 0.5.sp,
-            color = colorScheme.primary
+            maxLines = 1,
+            color = colorScheme.onSurfaceVariant
         )
     }
 }
@@ -526,10 +531,10 @@ internal fun SheetSectionLabel(
     val palette = LocalInceptionPalette.current
     Text(
         text = text.uppercase(),
-        fontFamily = InceptionFontFamily,
-        fontSize = 11.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 0.8.sp,
+        fontFamily = SpaceMonoFamily,
+        fontSize = 10.sp,
+        fontWeight = FontWeight.Bold,
+        letterSpacing = 1.2.sp,
         color = palette.textTertiary,
         modifier = modifier
             .fillMaxWidth()
@@ -587,17 +592,17 @@ internal fun SheetDestructiveButton(
         modifier = modifier
             .fillMaxWidth()
             .height(44.dp),
-        shape = RoundedCornerShape(10.dp),
-        color = accent.copy(alpha = 0.10f),
-        border = BorderStroke(1.dp, accent.copy(alpha = 0.30f))
+        shape = RoundedCornerShape(8.dp),
+        color = accent.copy(alpha = 0.08f),
+        border = BorderStroke(1.dp, accent.copy(alpha = 0.40f))
     ) {
         Box(contentAlignment = Alignment.Center) {
             Text(
                 text = text.uppercase(),
-                fontFamily = InceptionFontFamily,
+                fontFamily = SpaceMonoFamily,
                 fontSize = 11.sp,
-                fontWeight = FontWeight.Medium,
-                letterSpacing = 0.8.sp,
+                fontWeight = FontWeight.Bold,
+                letterSpacing = 1.0.sp,
                 color = accent
             )
         }

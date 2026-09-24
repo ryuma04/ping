@@ -49,14 +49,14 @@ data class InceptionPalette(
 )
 
 val DarkInceptionPalette = InceptionPalette(
-    inputOutline = Color(0xFF333635),
-    inputOutlineFocused = Color(0xFF5A605D),
-    inputSurface = Color(0xFF0B0B0B),
-    inputSurfaceFocused = Color(0xFF151515),
-    inputButton = Color(0xFF1E1E1E),
-    textTertiary = Color(0xFF6B776B),
-    accentOrange = Color(0xFFFF9F0A),
-    accentPurple = Color(0xFFBF5AF2),
+    inputOutline = NothingBorder,
+    inputOutlineFocused = NothingBorderHighlight,
+    inputSurface = NothingSurface,
+    inputSurfaceFocused = NothingSurfaceVariant,
+    inputButton = Color(0xFF161616),
+    textTertiary = NothingTextTertiary,
+    accentOrange = NothingStatusAmber,
+    accentPurple = NothingRed,
     peerColors = PeerColorStyle.Dark,
 )
 

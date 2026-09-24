@@ -57,7 +57,7 @@ fun InceptionBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
         dragHandle = null,
-        shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+        shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
         containerColor = MaterialTheme.colorScheme.background,
     ) {
         CompositionLocalProvider(LocalSheetDismiss provides animatedDismiss) {

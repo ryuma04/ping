@@ -119,39 +119,39 @@ class GeohashPickerActivity : OrientationAwareActivity() {
                 val globeColors = remember(colorScheme, dark) {
                     if (dark) {
                         GlobeColors(
-                            accent = colorScheme.primary,
-                            land = Color(0xFF16241B),
-                            coastline = colorScheme.primary.copy(alpha = 0.45f),
-                            border = colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                            oceanCenter = Color(0xFF0A1410),
-                            oceanEdge = Color(0xFF020604),
-                            atmosphere = colorScheme.primary,
-                            graticule = colorScheme.onSurface.copy(alpha = 0.055f),
-                            grid = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            label = colorScheme.onSurfaceVariant,
-                            labelHalo = colorScheme.background,
-                            star = colorScheme.onSurface
+                            accent = com.inception.android.ui.theme.NothingRed,
+                            land = Color(0xFF141414),
+                            coastline = Color(0xFF444444),
+                            border = Color(0xFF222222),
+                            oceanCenter = Color(0xFF000000),
+                            oceanEdge = Color(0xFF000000),
+                            atmosphere = Color(0xFF222222),
+                            graticule = Color(0xFF161616),
+                            grid = Color(0xFF2A2A2A),
+                            label = Color(0xFF999999),
+                            labelHalo = Color(0xFF000000),
+                            star = Color(0xFF444444)
                         )
                     } else {
                         GlobeColors(
-                            accent = colorScheme.primary,
-                            land = Color(0xFFBCD2C0),
-                            coastline = colorScheme.primary.copy(alpha = 0.5f),
-                            border = colorScheme.onSurfaceVariant.copy(alpha = 0.6f),
-                            oceanCenter = Color(0xFFEAF2EC),
-                            oceanEdge = Color(0xFFD4E2D7),
-                            atmosphere = colorScheme.primary,
-                            graticule = colorScheme.onSurface.copy(alpha = 0.08f),
-                            grid = colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                            label = colorScheme.onSurfaceVariant,
-                            labelHalo = colorScheme.background,
-                            star = colorScheme.onSurfaceVariant
+                            accent = com.inception.android.ui.theme.NothingRed,
+                            land = Color(0xFFEBEBE9),
+                            coastline = Color(0xFFCCCCCC),
+                            border = Color(0xFFDDDDDC),
+                            oceanCenter = Color(0xFFF5F5F3),
+                            oceanEdge = Color(0xFFE2E2E0),
+                            atmosphere = Color(0xFFD0D0CE),
+                            graticule = Color(0xFFE6E6E4),
+                            grid = Color(0xFFCCCCCC),
+                            label = Color(0xFF666666),
+                            labelHalo = Color(0xFFFFFFFF),
+                            star = Color(0xFFCCCCCC)
                         )
                     }
                 }
 
-                val labelTypeface = remember { ResourcesCompat.getFont(context, R.font.geist_mono_medium) }
-                val labelTypefaceBold = remember { ResourcesCompat.getFont(context, R.font.geist_mono_semibold) }
+                val labelTypeface = remember { ResourcesCompat.getFont(context, R.font.space_mono_regular) }
+                val labelTypefaceBold = remember { ResourcesCompat.getFont(context, R.font.space_mono_bold) }
 
                 Box(
                     Modifier
@@ -177,20 +177,20 @@ class GeohashPickerActivity : OrientationAwareActivity() {
                             .align(Alignment.TopCenter)
                             .statusBarsPadding()
                             .padding(top = 20.dp)
-                            .fillMaxWidth(0.8f),
-                        color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                        shape = RoundedCornerShape(12.dp),
-                        tonalElevation = 3.dp,
-                        shadowElevation = 6.dp
+                            .fillMaxWidth(0.85f),
+                        color = colorScheme.surface,
+                        shape = RoundedCornerShape(8.dp),
+                        border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline)
                     ) {
                         Text(
-                            text = stringResource(R.string.pan_zoom_instruction),
-                            fontSize = 12.sp,
+                            text = stringResource(R.string.pan_zoom_instruction).uppercase(),
+                            fontSize = 11.sp,
+                            letterSpacing = 0.5.sp,
                             textAlign = TextAlign.Center,
-                            fontFamily = InceptionFontFamily,
-                            color = MaterialTheme.colorScheme.onSurface,
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            color = colorScheme.onSurfaceVariant,
                             modifier = Modifier
-                                .padding(horizontal = 14.dp, vertical = 10.dp)
+                                .padding(horizontal = 14.dp, vertical = 8.dp)
                         )
                     }
 
@@ -205,28 +205,29 @@ class GeohashPickerActivity : OrientationAwareActivity() {
                     ) {
                         // Geohash label (monospace, app style)
                         Surface(
-                            color = MaterialTheme.colorScheme.surface.copy(alpha = 0.85f),
-                            shape = RoundedCornerShape(12.dp),
-                            tonalElevation = 3.dp,
-                            shadowElevation = 6.dp
+                            color = colorScheme.surface,
+                            shape = RoundedCornerShape(8.dp),
+                            border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline)
                         ) {
                             Column(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                             ) {
                                 Text(
-                                    text = if (globeState.selectedGeohash.isNotEmpty()) "#${globeState.selectedGeohash}" else "select location",
-                                    fontSize = BASE_FONT_SIZE.sp,
-                                    fontFamily = InceptionFontFamily,
-                                    fontWeight = FontWeight.Medium,
-                                    color = MaterialTheme.colorScheme.onSurface
+                                    text = if (globeState.selectedGeohash.isNotEmpty()) "#${globeState.selectedGeohash.uppercase()}" else "[SELECT LOCATION]",
+                                    fontSize = 16.sp,
+                                    fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                    fontWeight = FontWeight.Bold,
+                                    letterSpacing = 1.sp,
+                                    color = colorScheme.onSurface
                                 )
                                 if (globeState.selectedGeohash.isNotEmpty()) {
                                     Text(
-                                        text = "${levelForLength(globeState.precision).displayName} • ${coverageString(globeState.precision)}",
-                                        fontSize = (BASE_FONT_SIZE - 4).sp,
-                                        fontFamily = InceptionFontFamily,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        text = "${levelForLength(globeState.precision).displayName.uppercase()} • ${coverageString(globeState.precision).uppercase()}",
+                                        fontSize = 10.sp,
+                                        fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                                        letterSpacing = 0.5.sp,
+                                        color = colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
@@ -240,9 +241,11 @@ class GeohashPickerActivity : OrientationAwareActivity() {
                             // Decrease precision
                             Button(
                                 onClick = { globeState.animatePrecision(globeState.precision - 1) },
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                    contentColor = MaterialTheme.colorScheme.primary
+                                    containerColor = colorScheme.surfaceVariant,
+                                    contentColor = colorScheme.onSurface
                                 )
                             ) {
                                 Icon(Icons.Filled.Remove, contentDescription = stringResource(R.string.cd_decrease_precision))
@@ -251,9 +254,11 @@ class GeohashPickerActivity : OrientationAwareActivity() {
                             // Increase precision
                             Button(
                                 onClick = { globeState.animatePrecision(globeState.precision + 1) },
+                                shape = RoundedCornerShape(8.dp),
+                                border = androidx.compose.foundation.BorderStroke(1.dp, colorScheme.outline),
                                 colors = ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-                                    contentColor = MaterialTheme.colorScheme.primary
+                                    containerColor = colorScheme.surfaceVariant,
+                                    contentColor = colorScheme.onSurface
                                 )
                             ) {
                                 Icon(Icons.Filled.Add, contentDescription = stringResource(R.string.cd_increase_precision))

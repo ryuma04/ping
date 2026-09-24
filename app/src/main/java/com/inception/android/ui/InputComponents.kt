@@ -85,6 +85,8 @@ import com.inception.android.features.voice.AudioWaveformExtractor
 import com.inception.android.ui.media.RealtimeScrollingWaveform
 import com.inception.android.ui.media.ImagePickerButton
 import com.inception.android.ui.media.FilePickerButton
+import com.inception.android.ui.theme.SpaceMonoFamily
+import com.inception.android.ui.theme.SpaceGroteskFamily
 
 /**
  * Input components for ChatScreen
@@ -490,9 +492,11 @@ fun MessageInput(
                     Text(
                         text = if (
                             selectedPrivatePeer == null && currentChannel == null && activePublicTalker != null
-                        ) "$activePublicTalker is live" else stringResource(R.string.type_a_message_placeholder),
+                        ) "// $activePublicTalker IS LIVE" else "// MESSAGE...",
                         style = MaterialTheme.typography.bodyMedium.copy(
-                            fontFamily = InceptionFontFamily
+                            fontFamily = com.inception.android.ui.theme.SpaceMonoFamily,
+                            fontSize = 13.sp,
+                            letterSpacing = 0.5.sp
                         ),
                         color = palette.textTertiary,
                         maxLines = 1,
@@ -871,8 +875,8 @@ fun CommandSuggestionItem(
         Text(
             text = allCommands.joinToString(", "),
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = InceptionFontFamily,
-                fontWeight = FontWeight.Medium
+                fontFamily = SpaceMonoFamily,
+                fontWeight = FontWeight.Bold
             ),
             color = colorScheme.primary,
             fontSize = (BASE_FONT_SIZE - 2).sp
@@ -883,7 +887,7 @@ fun CommandSuggestionItem(
             Text(
                 text = syntax,
                 style = MaterialTheme.typography.bodySmall.copy(
-                    fontFamily = InceptionFontFamily
+                    fontFamily = SpaceMonoFamily
                 ),
                 color = colorScheme.onSurfaceVariant,
                 fontSize = (BASE_FONT_SIZE - 4).sp
@@ -894,10 +898,10 @@ fun CommandSuggestionItem(
         Text(
             text = suggestion.description,
             style = MaterialTheme.typography.bodySmall.copy(
-                fontFamily = InceptionFontFamily
+                fontFamily = SpaceGroteskFamily
             ),
             color = palette.textTertiary,
-            fontSize = (BASE_FONT_SIZE - 4).sp,
+            fontSize = (BASE_FONT_SIZE - 3).sp,
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )

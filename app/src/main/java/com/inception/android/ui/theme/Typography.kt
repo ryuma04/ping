@@ -20,65 +20,94 @@ val MessageSenderTextStyle = ChatVisualTokens.SenderStyle
 
 // Typography matching the iOS monospace design - using BASE_FONT_SIZE for consistency
 val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = InceptionFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = (BASE_FONT_SIZE + 1).sp,
-        lineHeight = (BASE_FONT_SIZE + 7).sp
+    displayLarge = TextStyle(
+        fontFamily = DotoFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 48.sp,
+        lineHeight = 56.sp,
+        letterSpacing = (-1.0).sp
     ),
-    bodyMedium = TextStyle(
-        fontFamily = InceptionFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = BASE_FONT_SIZE.sp,
-        lineHeight = (BASE_FONT_SIZE + 6).sp
+    displayMedium = TextStyle(
+        fontFamily = SpaceGroteskFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 36.sp,
+        lineHeight = 44.sp,
+        letterSpacing = (-0.5).sp
     ),
-    bodySmall = TextStyle(
-        fontFamily = InceptionFontFamily,
-        fontWeight = FontWeight.Normal,
-        fontSize = (BASE_FONT_SIZE - 3).sp,
-        lineHeight = (BASE_FONT_SIZE + 1).sp
+    displaySmall = TextStyle(
+        fontFamily = SpaceGroteskFamily,
+        fontWeight = FontWeight.Bold,
+        fontSize = 28.sp,
+        lineHeight = 36.sp
     ),
-    headlineSmall = TextStyle(
-        fontFamily = InceptionFontFamily,
-        fontWeight = FontWeight.Medium,
-        fontSize = (BASE_FONT_SIZE + 3).sp,
-        lineHeight = (BASE_FONT_SIZE + 9).sp
-    ),
-    // Previously unset, which leaked the Roboto default into onboarding + sheet titles.
     headlineLarge = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Bold,
         fontSize = (BASE_FONT_SIZE + 13).sp,
         lineHeight = (BASE_FONT_SIZE + 21).sp
     ),
+    headlineMedium = TextStyle(
+        fontFamily = SpaceGroteskFamily,
+        fontWeight = FontWeight.SemiBold,
+        fontSize = (BASE_FONT_SIZE + 7).sp,
+        lineHeight = (BASE_FONT_SIZE + 15).sp
+    ),
+    headlineSmall = TextStyle(
+        fontFamily = SpaceGroteskFamily,
+        fontWeight = FontWeight.Medium,
+        fontSize = (BASE_FONT_SIZE + 3).sp,
+        lineHeight = (BASE_FONT_SIZE + 9).sp
+    ),
     titleLarge = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Medium,
         fontSize = (BASE_FONT_SIZE + 5).sp,
         lineHeight = (BASE_FONT_SIZE + 13).sp
     ),
     titleMedium = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceGroteskFamily,
         fontWeight = FontWeight.Medium,
         fontSize = (BASE_FONT_SIZE + 1).sp,
         lineHeight = (BASE_FONT_SIZE + 7).sp
     ),
+    bodyLarge = TextStyle(
+        fontFamily = SpaceGroteskFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = (BASE_FONT_SIZE + 1).sp,
+        lineHeight = (BASE_FONT_SIZE + 7).sp
+    ),
+    bodyMedium = TextStyle(
+        fontFamily = SpaceGroteskFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = BASE_FONT_SIZE.sp,
+        lineHeight = (BASE_FONT_SIZE + 6).sp
+    ),
+    bodySmall = TextStyle(
+        fontFamily = SpaceMonoFamily,
+        fontWeight = FontWeight.Normal,
+        fontSize = (BASE_FONT_SIZE - 2).sp,
+        lineHeight = (BASE_FONT_SIZE + 2).sp,
+        letterSpacing = 0.3.sp
+    ),
     labelLarge = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceMonoFamily,
         fontWeight = FontWeight.Medium,
         fontSize = (BASE_FONT_SIZE - 1).sp,
-        lineHeight = (BASE_FONT_SIZE + 5).sp
+        lineHeight = (BASE_FONT_SIZE + 5).sp,
+        letterSpacing = 0.5.sp
     ),
     labelMedium = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceMonoFamily,
         fontWeight = FontWeight.Medium,
         fontSize = (BASE_FONT_SIZE - 2).sp,
-        lineHeight = (BASE_FONT_SIZE + 3).sp
+        lineHeight = (BASE_FONT_SIZE + 3).sp,
+        letterSpacing = 0.5.sp
     ),
     labelSmall = TextStyle(
-        fontFamily = InceptionFontFamily,
+        fontFamily = SpaceMonoFamily,
         fontWeight = FontWeight.Normal,
         fontSize = (BASE_FONT_SIZE - 4).sp,
-        lineHeight = (BASE_FONT_SIZE + 1).sp
+        lineHeight = (BASE_FONT_SIZE + 1).sp,
+        letterSpacing = 0.5.sp
     )
 )
