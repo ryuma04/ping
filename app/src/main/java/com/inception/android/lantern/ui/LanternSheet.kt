@@ -136,7 +136,7 @@ fun LanternSheet(
             ) {
                 Column {
                     Text(
-                        text = "LANTERN",
+                        text = "PING AI",
                         fontFamily = SpaceMonoFamily,
                         fontWeight = FontWeight.Bold,
                         fontSize = 18.sp,
@@ -554,7 +554,7 @@ private fun AiResponseCard(
                 horizontalArrangement = Arrangement.spacedBy(6.dp)
             ) {
                 Text(
-                    text = "LANTERN AI",
+                    text = "PING AI",
                     fontFamily = SpaceMonoFamily,
                     fontSize = 9.sp,
                     letterSpacing = 1.sp,
@@ -950,7 +950,7 @@ private fun NoResultsCard(
         horizontalAlignment = Alignment.Start
     ) {
         Text(
-            text = "LANTERN // NO LOCAL MATCH",
+            text = "PING AI // NO LOCAL MATCH",
             fontFamily = SpaceMonoFamily,
             fontSize = 9.sp,
             letterSpacing = 1.sp,
@@ -1020,7 +1020,7 @@ private fun LoadingIndicator() {
         verticalAlignment = Alignment.CenterVertically
     ) {
         Text(
-            text = "LANTERN",
+            text = "PING AI",
             fontFamily = SpaceMonoFamily,
             fontSize = 9.sp,
             letterSpacing = 1.sp,

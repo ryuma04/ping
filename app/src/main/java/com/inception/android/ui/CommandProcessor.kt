@@ -25,7 +25,7 @@ class CommandProcessor(
         CommandSuggestion("/clear", emptyList(), null, "clear chat messages"),
         CommandSuggestion("/hug", emptyList(), "<nickname>", "send someone a warm hug"),
         CommandSuggestion("/j", listOf("/join"), "<channel>", "join or create a channel"),
-        CommandSuggestion("/lantern", listOf("/guide"), "<query>", "search offline emergency knowledge"),
+        CommandSuggestion("/pingai", listOf("/ai", "/lantern", "/guide"), "<query>", "search offline emergency knowledge with Ping AI"),
         CommandSuggestion("/m", listOf("/msg"), "<nickname> [message]", "send private message"),
         CommandSuggestion("/pay", emptyList(), "<token> [public]", "send a Cashu ecash token"),
         CommandSuggestion("/slap", emptyList(), "<nickname>", "slap someone with a trout"),
@@ -43,7 +43,7 @@ class CommandProcessor(
         when (cmd) {
             "/j", "/join" -> handleJoinCommand(parts, myPeerID)
             "/m", "/msg" -> handleMessageCommand(parts, meshService, viewModel)
-            "/lantern", "/guide" -> handleLanternCommand(parts, viewModel)
+            "/pingai", "/ai", "/lantern", "/guide" -> handleLanternCommand(parts, viewModel)
             "/pay" -> handlePayCommand(command, meshService, myPeerID, onSendMessage, viewModel)
             "/w" -> handleWhoCommand(meshService, viewModel)
             "/clear" -> handleClearCommand()
@@ -371,8 +371,8 @@ class CommandProcessor(
     private fun handleLanternCommand(parts: List<String>, viewModel: ChatViewModel?) {
         if (parts.size <= 1) {
             val systemMessage = InceptionMessage(
-                sender = "lantern",
-                content = "Usage: /lantern <emergency query>\nExample: /lantern purify flood water\nOr tap the Lantern icon in the top header.",
+                sender = "ping ai",
+                content = "Usage: /pingai <emergency query>\nExample: /pingai purify flood water\nOr tap the Ping AI icon in the top header.",
                 timestamp = Date(),
                 isRelay = false
             )
@@ -396,11 +396,11 @@ class CommandProcessor(
                 } else ""
                 "📖 [${chunk.title} - ${chunk.sourceManual}]\n${chunk.summary}$stepsText"
             } else {
-                "No local manual found for \"$query\". Tap the Lantern icon in the header to ask the mesh."
+                "No local manual found for \"$query\". Tap the Ping AI icon in the header to ask the mesh."
             }
 
             val responseMessage = InceptionMessage(
-                sender = "lantern",
+                sender = "ping ai",
                 content = content,
                 timestamp = Date(),
                 isRelay = false

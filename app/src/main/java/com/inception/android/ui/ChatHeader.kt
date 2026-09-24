@@ -863,11 +863,11 @@ private fun MainHeader(
                     if (onLanternClick != null) {
                         HeaderIconButton(
                             onClick = onLanternClick,
-                            contentDescription = "Lantern Emergency Guide"
+                            contentDescription = "Ping AI Emergency Guide"
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Lightbulb,
-                                contentDescription = "Lantern Emergency Guide",
+                                contentDescription = "Ping AI Emergency Guide",
                                 modifier = Modifier.size(HeaderIconSize),
                                 tint = colorScheme.onSurfaceVariant
                             )
